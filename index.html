@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+  <title>모바일 안면 인식 시스템</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .video-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: #000;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    #webcam,
+    #overlay-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .mirror {
+      transform: scaleX(-1);
+    }
+    .laser-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: rgba(59, 130, 246, 0.8);
+      box-shadow: 0 0 15px #3b82f6;
+      z-index: 20;
+      display: none;
+      animation: moveLaser 3s infinite ease-in-out;
+    }
+    @keyframes moveLaser {
+      0% { top: 15%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 85%; opacity: 0; }
+    }
+    .touch-btn {
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s active;
+    }
+    .touch-btn:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- 상단 대시보드 -->
+  <header class="p-4 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold text-blue-400">Mobile FaceID</h1>
+        <div class="flex items-center gap-2 mt-1">
+          <span id="secure-status"
+                class="text-[10px] px-2 py-0.5 rounded-full border">SECURITY CHECK...</span>
+          <span id="sync-status"
+                class="text-[10px] px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30">
+            DB Syncing...
+          </span>
+        </div>
+      </div>
+      <div class="text-right">
+        <p id="realtime-clock" class="text-xs font-mono text-slate-400">00:00:00</p>
+        <p id="match-confidence" class="text-[10px] text-slate-500 font-bold">ACCURACY: --%</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 p-4 space-y-4 max-w-md mx-auto w-full">
+    <!-- 안내 배너 -->
+    <div id="banner" class="hidden bg-yellow-500/10 border border-yellow-600/40 text-yellow-200 rounded-xl p-3 text-[12px]"></div>
+
+    <!-- 카메라 구역 -->
+    <div class="video-container border-2 border-slate-800">
+      <video id="webcam" autoplay playsinline muted></video>
+      <canvas id="overlay-canvas"></canvas>
+      <div id="laser" class="laser-line"></div>
+
+      <!-- 초기 안내 화면 -->
+      <div id="init-screen"
+           class="absolute inset-0 z-30 bg-slate-900/90 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-lg font-medium">데이터 동기화 및 시스템 준비 중</p>
+        <p class="text-xs text-slate-500 mt-2 italic">잠시만 기다려 주십시오...</p>
+      </div>
+    </div>
+
+    <!-- 하단 컨트롤 버튼 -->
+    <div class="grid grid-cols-2 gap-3">
+      <button id="start-btn"
+              class="touch-btn bg-blue-600 py-4 rounded-2xl font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        인식 시작
+      </button>
+      <button id="switch-btn"
+              class="touch-btn bg-slate-800 py-4 rounded-2xl font-bold flex items-center justify-center gap-2"
+              disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        카메라 전환
+      </button>
+    </div>
+
+    <!-- 결과 카드 -->
+    <div id="result-card" class="bg-slate-900 rounded-3xl p-5 border-2 border-transparent transition-all duration-300 shadow-xl">
+      <div id="status-idle" class="flex flex-col items-center py-4">
+        <div class="w-12 h-1 bg-slate-800 rounded-full mb-4"></div>
+        <p class="text-sm text-slate-500 font-mono animate-pulse">SCANNING STREAM...</p>
+      </div>
+
+      <div id="status-found" class="hidden">
+        <div class="flex items-center gap-4 mb-4">
+          <div id="profile-img" class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">?</div>
+          <div>
+            <h2 id="profile-name" class="text-xl font-bold">---</h2>
+            <p id="profile-id" class="text-[10px] font-mono text-slate-500">ID: --------</p>
+          </div>
+          <div class="ml-auto">
+            <span id="access-badge" class="px-2 py-1 rounded-md text-[10px] font-bold">ACCESS</span>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+            <label class="text-[9px] text-slate-500 font-bold uppercase block mb-1">Department</label>
+            <p id="info-dept" class="text-sm">--</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="status-error" class="hidden flex items-center gap-3 bg-red-950/20 p-4 rounded-xl border border-red-900/30">
+        <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-red-400">미등록 인원 감지</p>
+          <p class="text-[10px] text-red-500/80">데이터베이스에 일치하는 정보가 없습니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 로그 터미널 -->
+    <div class="bg-black/40 rounded-xl p-3 border border-slate-800">
+      <div id="log-box" class="text-[10px] font-mono h-24 overflow-y-auto text-emerald-500/70">
+        > System Booting...
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // -----------------------------
+    // 0. 보안/호환성 및 공통 유틸
+    // -----------------------------
+    const SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/1Nm-cjEZS-Ob-1FDMItiCxHVes4Yknkep/export?format=csv";
+
+    let db = [];
+    let currentFacingMode = "user"; // 기본 전면
+    let deviceList = []; // MediaDeviceInfo[]
+    let selectedDeviceId = null; // 현재 사용 중인 deviceId (있으면 우선)
+    let analysisTimer = null;
+
+    const video = document.getElementById("webcam");
+    const canvas = document.getElementById("overlay-canvas");
+    const ctx = canvas.getContext("2d");
+    const logBox = document.getElementById("log-box");
+    const banner = document.getElementById("banner");
+    const secureStatus = document.getElementById("secure-status");
+
+    function addLog(msg) {
+      const div = document.createElement("div");
+      div.textContent = `> ${msg}`;
+      logBox.appendChild(div);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function showBanner(message, tone = "warn") {
+      banner.textContent = message;
+      banner.classList.remove("hidden");
+      if (tone === "warn") {
+        banner.className =
+          "bg-yellow-500/10 border border-yellow-600/40 text-yellow-200 rounded-xl p-3 text-[12px]";
+      } else if (tone === "error") {
+        banner.className =
+          "bg-red-500/10 border border-red-600/40 text-red-200 rounded-xl p-3 text-[12px]";
+      } else {
+        banner.className =
+          "bg-emerald-500/10 border border-emerald-600/40 text-emerald-200 rounded-xl p-3 text-[12px]";
+      }
+    }
+
+    function isSupportedBrowser() {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    }
+
+    function isSecureEnough() {
+      // getUserMedia는 secure context에서만 동작(https 또는 localhost/loopback)
+      if (window.isSecureContext) return true;
+      // 일부 브라우저는 localhost/127.0.0.1을 secure처럼 취급
+      const host = location.hostname;
+      const proto = location.protocol;
+      if (proto === "file:") return false;
+      if (host === "localhost" || host === "127.0.0.1" || host === "[::1]") return true;
+      return proto === "https:";
+    }
+
+    function updateSecureBadge() {
+      if (isSecureEnough()) {
+        secureStatus.textContent = "SECURE CONTEXT";
+        secureStatus.className =
+          "text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30";
+      } else {
+        secureStatus.textContent = "INSECURE (NO CAMERA)";
+        secureStatus.className =
+          "text-[10px] px-2 py-0.5 bg-red-500/20 text-red-300 rounded-full border border-red-500/30";
+      }
+    }
+
+    // -----------------------------
+    // 1. 구글 시트 데이터 로드
+    // -----------------------------
+    async function fetchSheetData() {
+      try {
+        const response = await fetch(SHEET_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error("Network error");
+        const data = await response.text();
+        const rows = data.split("\n").filter((row) => row.trim() !== "");
+        db = rows.slice(1).map((row, index) => {
+          const cols = row.split(",").map((c) => c.trim());
+          return {
+            id: cols[0] || `ID-${1000 + index}`,
+            name: cols[1] || "Unnamed",
+            dept: cols[2] || "General",
+            color: ["bg-blue-600", "bg-indigo-600", "bg-emerald-600", "bg-amber-600"][index % 4],
+          };
+        });
+        document.getElementById("sync-status").textContent = `Cloud Synced (${db.length})`;
+        document.getElementById("init-screen").classList.add("hidden");
+        addLog(`DB Loaded: ${db.length} entries`);
+      } catch (err) {
+        addLog("DB Load Error. Using fallback.");
+        db = [{ id: "GUEST-01", name: "방문자", dept: "임시", color: "bg-slate-600" }];
+        document.getElementById("init-screen").classList.add("hidden");
+      }
+    }
+
+    // -----------------------------
+    // 2. 카메라 장치 탐색/선택
+    // -----------------------------
+    async function refreshDevices() {
+      try {
+        deviceList = (await navigator.mediaDevices.enumerateDevices()).filter(
+          (d) => d.kind === "videoinput"
+        );
+        addLog(`Video Inputs: ${deviceList.length}`);
+        // 전/후면 추정: label에 back/rear/front 등 포함 여부로 heuristic
+        // (권한 획득 전에는 label이 비어있을 수 있음)
+        if (!selectedDeviceId && deviceList.length) {
+          // facingMode 기반 우선 선택
+          const preferBack = currentFacingMode === "environment";
+          const findByLabel = (kw) =>
+            deviceList.find((d) => (d.label || "").toLowerCase().includes(kw));
+          const back =
+            findByLabel("back") || findByLabel("rear") || deviceList[deviceList.length - 1];
+          const front = findByLabel("front") || deviceList[0];
+
+          selectedDeviceId = preferBack ? (back && back.deviceId) : (front && front.deviceId);
+        }
+        // 스위치 버튼 활성/비활성
+        const switchBtn = document.getElementById("switch-btn");
+        switchBtn.disabled = deviceList.length < 2;
+      } catch (e) {
+        addLog("enumerateDevices failed (permission likely not granted yet).");
+      }
+    }
+
+    // -----------------------------
+    // 3. 카메라 시작/전환
+    // -----------------------------
+    async function stopCamera() {
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach((t) => t.stop());
+        video.srcObject = null;
+      }
+      if (analysisTimer) {
+        clearInterval(analysisTimer);
+        analysisTimer = null;
+      }
+    }
+
+    async function startCamera() {
+      // 보안 컨텍스트/브라우저 체크
+      if (!isSupportedBrowser()) {
+        showBanner("이 브라우저는 카메라 API를 지원하지 않습니다. Chrome/Edge(안드로이드) 또는 Safari(iOS)를 사용하세요.", "error");
+        addLog("Unsupported browser.");
+        return;
+      }
+      if (!isSecureEnough()) {
+        showBanner("보안 컨텍스트(HTTPS 또는 localhost)에서만 카메라 접근이 허용됩니다. 파일을 직접 열지 말고 로컬/HTTPS 서버에서 실행하세요.", "error");
+        addLog("Insecure context - camera blocked.");
+        return;
+      }
+
+      await stopCamera();
+
+      // 제약 조건 구성: deviceId가 있으면 우선 사용, 없으면 facingMode 사용
+      let constraints = {
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          // iOS Safari 호환을 위해 advanced는 피하고 기본 속성 사용
+        },
+        audio: false,
+      };
+
+      if (selectedDeviceId) {
+        constraints.video.deviceId = { exact: selectedDeviceId };
+      } else {
+        // label을 아직 모를 때는 facingMode로 시도
+        constraints.video.facingMode = currentFacingMode; // 'user' | 'environment'
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+
+        // 전면 카메라일 때만 미러
+        if (currentFacingMode === "user" && !selectedDeviceId) {
+          video.classList.add("mirror");
+        } else {
+          // deviceId 기반 선택 시에는 레이블이 front인지 확인하기 어렵기 때문에
+          // 기본적으로 미러 off, 필요시 UI에서 토글 추가 가능
+          if (constraints.video.facingMode === "user") {
+            video.classList.add("mirror");
+          } else {
+            video.classList.remove("mirror");
+          }
+        }
+
+        video.onloadedmetadata = () => {
+          canvas.width = video.videoWidth || canvas.clientWidth;
+          canvas.height = video.videoHeight || canvas.clientHeight;
+          document.getElementById("laser").style.display = "block";
+          addLog(
+            `Camera Started (${currentFacingMode}${
+              selectedDeviceId ? ", deviceId set" : ", facingMode"
+            })`
+          );
+          // 권한이 열렸으니 이제 label 읽기 가능
+          refreshDevices();
+          startAnalysisLoop();
+        };
+      } catch (err) {
+        handleCameraError(err);
+      }
+    }
+
+    function handleCameraError(err) {
+      console.error(err);
+      addLog(`Camera Error: ${err.name} - ${err.message}`);
+      let msg = "카메라를 활성화할 수 없습니다. ";
+
+      switch (err.name) {
+        case "NotAllowedError":
+        case "SecurityError":
+          msg +=
+            "브라우저 권한이 거부되었습니다. 사이트 권한에서 '카메라 허용'으로 변경한 뒤 다시 시도하세요.";
+          break;
+        case "NotFoundError":
+          msg += "사용 가능한 카메라 장치가 없습니다.";
+          break;
+        case "NotReadableError":
+          msg += "다른 앱에서 카메라 사용 중일 수 있습니다. 해당 앱을 종료 후 다시 시도하세요.";
+          break;
+        case "OverconstrainedError":
+          msg += "요청한 카메라 제약 조건과 일치하는 장치를 찾지 못했습니다. 기본 카메라로 재시도하세요.";
+          // 제약 완화 재시도
+          selectedDeviceId = null;
+          currentFacingMode = "user";
+          setTimeout(startCamera, 300);
+          break;
+        default:
+          msg += "권한/네트워크/보안 상태를 확인하세요.";
+      }
+      showBanner(msg, "error");
+      alert(msg);
+    }
+
+    // -----------------------------
+    // 4. 분석 루프 (시뮬레이션 유지)
+    // -----------------------------
+    function startAnalysisLoop() {
+      // 애니메이션 루프
+      function frame() {
+        drawHUD();
+        requestAnimationFrame(frame);
+      }
+      frame();
+
+      // 3초마다 매칭 시뮬레이션
+      analysisTimer = setInterval(runRecognition, 3000);
+    }
+
+    function drawHUD() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const size = Math.min(canvas.width, canvas.height) * 0.7;
+      const x = (canvas.width - size) / 2;
+      const y = (canvas.height - size) / 2;
+
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.4)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, size, size);
+
+      // 코너 라인
+      ctx.fillStyle = "#3b82f6";
+      const corner = 40;
+      const thick = 6;
+      ctx.fillRect(x, y, corner, thick); ctx.fillRect(x, y, thick, corner);
+      ctx.fillRect(x + size - corner, y, corner, thick); ctx.fillRect(x + size - thick, y, thick, corner);
+      ctx.fillRect(x, y + size - thick, corner, thick); ctx.fillRect(x, y + size - corner, thick, corner);
+      ctx.fillRect(x + size - corner, y + size - thick, corner, thick);
+      ctx.fillRect(x + size - thick, y + size - corner, thick, corner);
+    }
+
+    function runRecognition() {
+      if (!video.srcObject) return;
+
+      const roll = Math.random();
+      const card = document.getElementById("result-card");
+      const idle = document.getElementById("status-idle");
+      const found = document.getElementById("status-found");
+      const error = document.getElementById("status-error");
+
+      // 초기화
+      idle.classList.add("hidden");
+      found.classList.add("hidden");
+      error.classList.add("hidden");
+      card.className =
+        "bg-slate-900 rounded-3xl p-5 border-2 border-transparent transition-all duration-300 shadow-xl";
+
+      if (roll < 0.2) {
+        // 아무도 없음
+        idle.classList.remove("hidden");
+        document.getElementById("match-confidence").textContent = "ACCURACY: --%";
+      } else if (roll < 0.8 && db.length > 0) {
+        // 일치 (성공)
+        const person = db[Math.floor(Math.random() * db.length)];
+        found.classList.remove("hidden");
+        card.classList.add("border-blue-500/50", "bg-blue-950/10");
+
+        document.getElementById("profile-name").textContent = person.name;
+        document.getElementById("profile-id").textContent = `ID: ${person.id}`;
+        document.getElementById("info-dept").textContent = person.dept;
+        document.getElementById("match-confidence").textContent = `ACCURACY: ${(95 + Math.random() * 4).toFixed(1)}%`;
+
+        const img = document.getElementById("profile-img");
+        img.textContent = person.name[0];
+        img.className =
+          `w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg text-white ${person.color}`;
+
+        const badge = document.getElementById("access-badge");
+        badge.textContent = "AUTHORIZED";
+        badge.className =
+          "px-2 py-1 rounded-md text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30";
+
+        addLog(`Match Found: ${person.name}`);
+      } else {
+        // 불일치 (경고)
+        error.classList.remove("hidden");
+        card.classList.add("border-red-500/50", "bg-red-950/10");
+        document.getElementById("match-confidence").textContent = "ACCURACY: 12.4%";
+        addLog("Alert: Unauthorized Subject Detected");
+      }
+    }
+
+    // -----------------------------
+    // 5. 이벤트 및 초기화
+    // -----------------------------
+    document.getElementById("start-btn").addEventListener("click", async () => {
+      // 사용자 제스처에서 호출해야 iOS Safari가 허용
+      showBanner("카메라를 초기화 중입니다. 브라우저 권한 요청이 뜨면 '허용'을 선택하세요.", "warn");
+      await startCamera();
+    });
+
+    document.getElementById("switch-btn").addEventListener("click", async () => {
+      // 장치 2개 이상일 때만 동작
+      if (deviceList.length < 2) return;
+
+      // 현재 선택 장치의 인덱스를 찾아 다음 장치로 순환
+      const idx = deviceList.findIndex((d) => d.deviceId === selectedDeviceId);
+      const nextIdx = (idx + 1) % deviceList.length;
+      selectedDeviceId = deviceList[nextIdx].deviceId;
+
+      // label을 기준으로 front/back 추정하여 미러 적용
+      const label = (deviceList[nextIdx].label || "").toLowerCase();
+      if (label.includes("front")) {
+        currentFacingMode = "user";
+        video.classList.add("mirror");
+      } else {
+        currentFacingMode = "environment";
+        video.classList.remove("mirror");
+      }
+      await startCamera();
+    });
+
+    // 실시간 시계
+    setInterval(() => {
+      document.getElementById("realtime-clock").textContent = new Date().toLocaleTimeString("ko-KR", { hour12: false });
+    }, 1000);
+
+    // 초기 실행
+    (function init() {
+      updateSecureBadge();
+
+      // 파일로 열었을 때 경고
+      if (location.protocol === "file:") {
+        showBanner(
+          "현재 파일(file://)로 열려 카메라 접근이 차단됩니다. " +
+            "간단 서버에서 실행하세요. 예) PC: 'python -m http.server 8080' 후 http://localhost:8080 접속",
+          "warn"
+        );
+      } else if (!isSecureEnough()) {
+        showBanner("HTTPS 또는 localhost(보안 컨텍스트)에서만 카메라 접근이 가능합니다.", "warn");
+      }
+
+      // 브라우저 지원 확인
+      if (!isSupportedBrowser()) {
+        showBanner("이 브라우저는 카메라 API를 지원하지 않습니다. Chrome/Edge(안드로이드) 또는 Safari(iOS)를 사용하세요.", "error");
+      }
+
+      fetchSheetData();
+
+      // 권한 변동 감지 시 장치 리스트 갱신
+      if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+        navigator.mediaDevices.addEventListener("devicechange", refreshDevices);
+      }
+    })();
+  </script>
+</body>
+</html>
