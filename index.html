@@ -26,12 +26,15 @@
             display: flex; flex-direction: column;
         }
 
-        /* --- 보안/안면인식 화면 --- */
+        /* --- 공통 애니메이션 --- */
+        .fade-in { animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- 1. 보안/안면인식 화면 --- */
         #security-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #000; z-index: 1000; display: flex;
             flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
         }
         .camera-container {
             position: relative; width: 220px; height: 220px; border-radius: 50%;
@@ -51,7 +54,7 @@
         }
         .data-warning { font-size: 11px; color: #888; margin-top: 20px; text-align: center; }
 
-        /* --- 메인 화면 --- */
+        /* --- 2. 메인 화면 --- */
         #main-app { display: none; flex: 1; flex-direction: column; padding: 25px 20px; overflow-y: auto; padding-bottom: 100px; }
         header { margin-bottom: 20px; }
         .hotel-name { font-size: 18px; font-weight: bold; color: var(--primary-color); }
@@ -59,7 +62,6 @@
 
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
 
-        /* 발렛 출차 요청 메뉴 (얇은 가로형) */
         .valet-item {
             grid-column: span 2; background: linear-gradient(135deg, #2c251a, #1a1a1a);
             border: 1px solid var(--primary-color); height: 60px;
@@ -75,6 +77,28 @@
         }
         .menu-item i { font-size: 28px; color: var(--primary-color); margin-bottom: 8px; }
         .menu-item span { font-size: 13px; color: #eee; }
+
+        /* --- 3. 발렛 차량번호 입력 화면 --- */
+        #valet-screen {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); z-index: 500; padding: 30px 20px; box-sizing: border-box;
+            flex-direction: column; align-items: center;
+        }
+        .valet-notice {
+            background-color: #2a251a; border: 1px solid var(--primary-color); color: #ddd;
+            padding: 15px; border-radius: 10px; font-size: 13px; line-height: 1.6; margin-bottom: 40px; text-align: center;
+        }
+        .car-input {
+            width: 100%; background: #000; border: 1px solid #444; color: #fff;
+            padding: 15px; font-size: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;
+            box-sizing: border-box; outline: none;
+        }
+        .car-input:focus { border-color: var(--primary-color); }
+        .send-btn {
+            width: 100%; background-color: var(--primary-color); color: #fff; border: none;
+            padding: 15px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .back-btn { margin-top: 20px; color: #888; text-decoration: underline; cursor: pointer; font-size: 14px; }
 
         /* --- 하단 네비게이션 --- */
         .bottom-nav {
@@ -110,12 +134,12 @@
         <div class="data-warning">해당 서비스는 모바일 데이터가 사용될 수 있습니다.</div>
     </div>
 
-    <div id="main-app">
+    <div id="main-app" class="fade-in">
         <header><div class="hotel-name">Banyantree Busan Haeundae</div></header>
         <div class="welcome-text">반갑습니다, 회원님.<br><span style="color:var(--primary-color); font-weight: bold;">무엇을 도와드릴까요?</span></div>
 
         <div class="menu-grid">
-            <div class="valet-item" onclick="handleValetRequest()">
+            <div class="valet-item" onclick="checkLocationForValet()">
                 <i class="material-icons">directions_car</i>
                 <span>Valet Parking Request</span>
             </div>
@@ -129,6 +153,15 @@
         </div>
     </div>
 
+    <div id="valet-screen" class="fade-in">
+        <div class="valet-notice">
+            “본 서비스는 발렛 출차만 가능하며, 귀하의 위치가 반얀트리 부산 해운대 호텔 내에 계실 때 서비스가 진행됩니다”
+        </div>
+        <input type="text" id="car-number" class="car-input" placeholder="차량 번호 입력 (예: 12가 3456)">
+        <button class="send-btn" onclick="sendValetWhatsApp()">발렛 출차 요청하기</button>
+        <div class="back-btn" onclick="closeValetScreen()">돌아가기</div>
+    </div>
+
     <div id="bottom-sheet-overlay" onclick="closeSubMenu()"></div>
     <div id="bottom-sheet">
         <div class="sheet-header"><span id="sheet-title" style="font-weight:bold; color:var(--primary-color);">Menu</span><i class="material-icons" onclick="closeSubMenu()">close</i></div>
@@ -136,7 +169,7 @@
     </div>
 
     <div class="bottom-nav" id="bottom-nav" style="display:none;">
-        <div class="nav-item"><i class="material-icons">home</i>Home</div>
+        <div class="nav-item" onclick="closeValetScreen()"><i class="material-icons">home</i>Home</div>
         <div class="nav-item" onclick="window.open('https://drive.google.com/file/d/1ICKC21t37n6B5ek9WQc_NNsLAfjAFfMo/view?usp=drive_link', '_blank')">
             <i class="material-icons">map</i>MAP
         </div>
@@ -147,6 +180,7 @@
     // 반얀트리 부산 해운대 좌표 (예시: 오시리아 인근)
     const HOTEL_LAT = 35.195; 
     const HOTEL_LNG = 129.231;
+    const NOTICE_MSG = "본 서비스는 발렛 출차만 가능하며, 귀하의 위치가 반얀트리 부산 해운대 호텔 내에 계실 때 서비스가 진행됩니다";
 
     const SUB_MENU_DATA = {
         concierge: {
@@ -184,28 +218,47 @@
         }, 500);
     }
 
-    function handleValetRequest() {
+    // [로직] 발렛 버튼 클릭 시 위치 확인
+    function checkLocationForValet() {
         if (!navigator.geolocation) {
-            alert("위치 정보를 사용할 수 없는 기기입니다.");
+            alert("이 기기에서는 위치 정보를 지원하지 않습니다.");
             return;
         }
 
         navigator.geolocation.getCurrentPosition((pos) => {
             const dist = Math.sqrt(Math.pow(pos.coords.latitude - HOTEL_LAT, 2) + Math.pow(pos.coords.longitude - HOTEL_LNG, 2));
             
-            // 대략적인 거리 체크 (0.005도는 약 500m)
+            // 대략 500m 이내일 때 (실제 서비스 시 좌표 보정 필요)
             if (dist < 0.005) {
-                const carNum = prompt("출차하실 차량 번호를 입력해주세요.");
-                if (carNum) {
-                    const msg = encodeURIComponent(`[발렛 출차 요청] 차량번호: ${carNum}`);
-                    window.open(`https://wa.me/+821050280073?text=${msg}`, '_blank');
-                }
+                showValetScreen();
             } else {
-                alert("본 서비스는 발렛 출차만 가능하며, 귀하의 위치가 반얀트리 부산 해운대 호텔 내에 계실 때 서비스가 진행됩니다.");
+                alert(NOTICE_MSG);
             }
         }, () => {
-            alert("위치 권한이 필요합니다.");
+            // 위치 동의 거부 시
+            alert(NOTICE_MSG);
         });
+    }
+
+    function showValetScreen() {
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('valet-screen').style.display = 'flex';
+    }
+
+    function closeValetScreen() {
+        document.getElementById('valet-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'flex';
+        document.getElementById('car-number').value = ''; // 입력값 초기화
+    }
+
+    function sendValetWhatsApp() {
+        const carNum = document.getElementById('car-number').value.trim();
+        if (!carNum) {
+            alert("차량 번호를 입력해주세요.");
+            return;
+        }
+        const msg = encodeURIComponent(`[발렛 출차 요청] 차량번호: ${carNum}`);
+        window.open(`https://wa.me/821050280073?text=${msg}`, '_blank');
     }
 
     function openSubMenu(cat) {
