@@ -6,147 +6,54 @@
     <title>Banyan Tree Busan Concierge</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #8E7958;
-            --bg-color: #121212;
-            --card-bg: #1E1E1E;
-            --text-color: #FFFFFF;
-        }
-
-        body {
-            margin: 0; padding: 0; background-color: #000;
-            font-family: 'Noto Sans KR', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            color: var(--text-color);
-        }
-
-        #app-container {
-            max-width: 480px; margin: 0 auto; background-color: var(--bg-color);
-            height: 100vh; position: relative; overflow: hidden;
-            display: flex; flex-direction: column;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-        }
-
+        :root { --primary-color: #8E7958; --bg-color: #121212; --card-bg: #1E1E1E; --text-color: #FFFFFF; }
+        body { margin: 0; padding: 0; background-color: #000; font-family: 'Noto Sans KR', sans-serif; color: var(--text-color); -webkit-tap-highlight-color: transparent; }
+        #app-container { max-width: 480px; margin: 0 auto; background-color: var(--bg-color); height: 100vh; position: relative; overflow: hidden; display: flex; flex-direction: column; }
         .fade-in { animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 1. 로그인/인증 선택 화면 --- */
-        #auth-selection-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #000; z-index: 1100; display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        .logo-intro {
-            font-size: 22px; font-weight: 300; letter-spacing: 2px;
-            margin-bottom: 50px; color: var(--primary-color); text-align: center; line-height: 1.4;
-        }
-        .auth-btn {
-            width: 80%; background-color: var(--card-bg); color: #fff;
-            border: 1px solid var(--primary-color); padding: 15px; border-radius: 10px;
-            font-size: 16px; margin-bottom: 15px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .auth-btn:active { background-color: #333; }
+        /* --- 로그인 및 인증 --- */
+        #auth-selection-screen, #security-screen, #code-auth-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 1100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .logo-intro { font-size: 22px; font-weight: 300; letter-spacing: 2px; margin-bottom: 50px; color: var(--primary-color); text-align: center; }
+        .auth-btn { width: 80%; background-color: var(--card-bg); color: #fff; border: 1px solid var(--primary-color); padding: 15px; border-radius: 10px; font-size: 16px; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        /* --- 카메라 화면 --- */
+        .camera-container { position: relative; width: 240px; height: 240px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary-color); margin-bottom: 20px; background: #1a1a1a; }
+        #video-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); animation: scan 2s infinite linear; }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
 
-        /* --- 2. 안면인식 화면 --- */
-        #security-screen {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #000; z-index: 1000; flex-direction: column;
-            align-items: center; justify-content: center;
-        }
-        .camera-container {
-            position: relative; width: 220px; height: 220px; border-radius: 50%;
-            overflow: hidden; border: 2px solid #333; margin-bottom: 20px;
-            background-color: #1a1a1a; display: flex; align-items: center; justify-content: center;
-        }
-        #video-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
-        .scan-line {
-            position: absolute; top: 0; left: 0; width: 100%; height: 5px;
-            background-color: var(--primary-color); box-shadow: 0 0 10px var(--primary-color);
-            animation: scan 2s infinite linear; display: none;
-        }
-        @keyframes scan { 0% { top: 0%; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-        .status-text { font-size: 14px; color: #ccc; margin-top: 10px; text-align: center; }
-        .data-warning { font-size: 11px; color: #888; margin-top: 20px; text-align: center; line-height: 1.4; }
+        /* --- 입력창 및 음성 버튼 --- */
+        .input-group { width: 80%; position: relative; display: flex; align-items: center; margin-bottom: 20px; }
+        .code-input { width: 100%; background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 15px; padding-right: 50px; font-size: 18px; border-radius: 10px; text-align: center; outline: none; }
+        .voice-btn { position: absolute; right: 10px; color: var(--primary-color); cursor: pointer; background: none; border: none; }
+        .voice-btn.listening { color: #ff4444; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* --- 3. 코드 입력 화면 --- */
-        #code-auth-screen {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #000; z-index: 1000; flex-direction: column;
-            align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
-        }
-        .code-input {
-            width: 80%; background: #1a1a1a; border: 1px solid #444; color: #fff;
-            padding: 15px; font-size: 18px; border-radius: 10px; text-align: center; margin-bottom: 20px;
-            outline: none; letter-spacing: 2px; text-transform: uppercase;
-        }
-        .code-input:focus { border-color: var(--primary-color); }
-        .submit-btn {
-            width: 80%; background-color: var(--primary-color); color: #fff; border: none;
-            padding: 15px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;
-        }
-        .back-text { margin-top: 25px; color: #888; text-decoration: underline; font-size: 13px; cursor: pointer; }
-
-        /* --- 4. 메인 화면 --- */
+        /* --- 메인 홈 --- */
         #main-app { display: none; flex: 1; flex-direction: column; padding: 25px 20px; overflow-y: auto; padding-bottom: 90px; }
-        header { display: flex; align-items: center; margin-bottom: 20px; }
-        .hotel-name { font-size: 18px; font-weight: bold; color: var(--primary-color); }
-        .welcome-text { font-size: 20px; margin: 15px 0 25px 0; line-height: 1.4; font-weight: 300;}
-
+        .hotel-name { font-size: 18px; font-weight: bold; color: var(--primary-color); margin-bottom: 20px; }
+        .welcome-text { font-size: 20px; margin-bottom: 25px; line-height: 1.4; }
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .menu-item {
-            background-color: var(--card-bg); border-radius: 12px; height: 100px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            border: 1px solid transparent;
-        }
-        .menu-item:active { transform: scale(0.96); background-color: #2a2a2a; border-color: var(--primary-color); }
-        .menu-item i { font-size: 32px; color: var(--primary-color); margin-bottom: 10px; }
-        .menu-item span { font-size: 14px; font-weight: 500; color: #eee; }
+        .menu-item { background-color: var(--card-bg); border-radius: 12px; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #333; }
+        .menu-item i { font-size: 30px; color: var(--primary-color); margin-bottom: 10px; }
+        .menu-item span { font-size: 13px; text-align: center; color: #ddd; }
 
-        /* --- 5. 컨시어지 전용 (그리드) 화면 --- */
-        #concierge-screen {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg-color); z-index: 400; padding: 25px 20px; box-sizing: border-box;
-            flex-direction: column; overflow-y: auto; padding-bottom: 90px;
-        }
+        /* --- 서브 화면들 --- */
+        .sub-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-color); z-index: 500; padding: 25px 20px; box-sizing: border-box; flex-direction: column; }
         .screen-header { display: flex; align-items: center; margin-bottom: 25px; font-size: 18px; font-weight: bold; color: var(--primary-color); }
-        .screen-header i { margin-right: 15px; cursor: pointer; font-size: 26px; }
+        .screen-header i { margin-right: 15px; cursor: pointer; }
 
-        /* --- 6. 발렛 차량번호 입력 화면 --- */
-        #valet-screen {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg-color); z-index: 500; padding: 30px 20px; box-sizing: border-box;
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        .valet-notice {
-            background-color: #2a251a; border: 1px solid var(--primary-color); color: #ddd;
-            padding: 15px; border-radius: 10px; font-size: 13px; line-height: 1.6; margin-bottom: 30px; text-align: center;
-            word-break: keep-all;
-        }
+        /* --- 발렛/네비게이션 --- */
+        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: 70px; background-color: #1a1a1a; display: flex; border-top: 1px solid #333; z-index: 100; }
+        .nav-item { flex: 1; color: #888; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; }
+        .nav-item.active { color: var(--primary-color); }
+        .nav-item i { font-size: 24px; margin-bottom: 3px; }
 
-        /* --- 하단 네비게이션 --- */
-        .bottom-nav {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 70px;
-            background-color: #1a1a1a; display: flex; align-items: center;
-            border-top: 1px solid #333; z-index: 50;
-        }
-        .nav-item {
-            flex: 1; color: #aaa; text-align: center; font-size: 12px; font-weight: 500;
-            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%; border-right: 1px solid #333; transition: color 0.2s;
-        }
-        .nav-item:last-child { border-right: none; }
-        .nav-item:active, .nav-item.active { color: var(--primary-color); }
-        .nav-item i { font-size: 26px; margin-bottom: 4px; }
-
-        /* 바텀 시트 (서브메뉴 팝업) */
-        #bottom-sheet-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 600; opacity: 0; transition: opacity 0.3s; }
-        #bottom-sheet { position: absolute; bottom: -100%; left: 0; width: 100%; background-color: #1a1a1a; border-radius: 20px 20px 0 0; z-index: 601; transition: bottom 0.3s ease; }
-        .sheet-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        .sheet-content { padding: 10px 20px 30px 20px; max-height: 60vh; overflow-y: auto;}
-        .sub-item { padding: 18px 0; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; color: #ddd; cursor: pointer; }
-        .sub-item:last-child { border-bottom: none; }
+        /* 바텀 시트 */
+        #bottom-sheet-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1200; }
+        #bottom-sheet { position: absolute; bottom: -100%; left: 0; width: 100%; background-color: #1a1a1a; border-radius: 20px 20px 0 0; z-index: 1201; transition: bottom 0.3s ease; padding: 20px; box-sizing: border-box; }
+        .sub-list-item { padding: 18px 0; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; color: #ddd; }
     </style>
 </head>
 <body>
@@ -154,332 +61,205 @@
 <div id="app-container">
     <div id="auth-selection-screen">
         <div class="logo-intro">BANYAN TREE<br><span style="font-size:14px; color:#aaa;">BUSAN HAEUNDAE</span></div>
-        <button class="auth-btn" onclick="showFaceAuth()"><i class="material-icons">face_retouching_natural</i>안면인식 로그인</button>
-        <button class="auth-btn" onclick="showCodeAuth()"><i class="material-icons">password</i>인증 코드로 로그인</button>
-        <div class="data-warning">해당 서비스는 모바일 데이터가 사용될 수 있습니다.</div>
+        <button class="auth-btn" onclick="openFaceAuth()"><i class="material-icons">face</i>안면인식 로그인</button>
+        <button class="auth-btn" onclick="openCodeAuth()"><i class="material-icons">vpn_key</i>인증 코드로 로그인</button>
     </div>
 
-    <div id="security-screen" class="fade-in">
-        <div class="logo-intro">BANYAN TREE</div>
+    <div id="security-screen" style="display:none;">
+        <div class="logo-intro">FACE ID SCANNING</div>
         <div class="camera-container">
-            <i class="material-icons" id="camera-icon" style="font-size:60px; color:#555;">face</i>
             <video id="video-feed" playsinline muted></video>
-            <div class="scan-line" id="scan-line"></div>
+            <div class="scan-line"></div>
         </div>
-        <button class="submit-btn" id="start-btn" onclick="startCamera()" style="width:auto; padding: 12px 30px;">안면인식 시작</button>
-        <div class="status-text" id="status-msg">본인 확인을 위해 버튼을 눌러주세요.</div>
-        <div class="back-text" onclick="backToAuthSelection()">뒤로 가기</div>
+        <div id="face-status" style="color:var(--primary-color); margin-bottom:20px;">카메라를 정면으로 응시해주세요</div>
+        <button class="auth-btn" style="width:60%;" onclick="location.reload()">취소</button>
     </div>
 
-    <div id="code-auth-screen" class="fade-in">
-        <div class="logo-intro">BANYAN TREE</div>
-        <input type="text" id="access-code" class="code-input" placeholder="코드 입력 (VIP4U)">
-        <button class="submit-btn" onclick="verifyCode()">확인</button>
-        <div class="back-text" onclick="backToAuthSelection()">뒤로 가기</div>
+    <div id="code-auth-screen" style="display:none;">
+        <div class="logo-intro">ENTER CODE</div>
+        <div class="input-group">
+            <input type="text" id="access-code" class="code-input" placeholder="코드 입력 (IAMWITHU)">
+            <button class="voice-btn" onclick="startVoiceRecognition('access-code')"><i class="material-icons">mic</i></button>
+        </div>
+        <button class="auth-btn" onclick="verifyCode()" style="background:var(--primary-color)">로그인</button>
+        <div style="margin-top:20px; color:#666; font-size:12px; cursor:pointer;" onclick="location.reload()">뒤로 가기</div>
     </div>
 
-    <div id="main-app" class="fade-in">
-        <header><div class="hotel-name">Banyantree Busan Haeundae</div></header>
-        <div class="welcome-text">반갑습니다, 회원님.<br><span style="color:var(--primary-color); font-weight: bold;">무엇을 도와드릴까요?</span></div>
-
+    <div id="main-app">
+        <div class="hotel-name">Banyantree Busan Haeundae</div>
+        <div class="welcome-text">반갑습니다, 회원님.<br><b>어떤 서비스를 도와드릴까요?</b></div>
         <div class="menu-grid">
-            <div class="menu-item" onclick="openConciergeScreen()">
-                <i class="material-icons">room_service</i>
-                <span>Concierge</span>
-            </div>
-            <div class="menu-item" onclick="window.open('https://www.banyantree.com/booking', '_blank')">
-                <i class="material-icons">event_available</i>
-                <span>Member booking</span>
-            </div>
+            <div class="menu-item" onclick="showSubScreen('concierge')"><i class="material-icons">room_service</i><span>Concierge<br>Service</span></div>
+            <div class="menu-item" onclick="showSubScreen('hotel')"><i class="material-icons">apartment</i><span>Hotel<br>Service</span></div>
+            <div class="menu-item" onclick="window.open('https://www.banyantree.com/booking', '_blank')"><i class="material-icons">event_available</i><span>Member<br>Booking</span></div>
+            <div class="menu-item" onclick="checkLocationForValet()"><i class="material-icons">directions_car</i><span>Valet<br>Parking</span></div>
         </div>
     </div>
 
-    <div id="concierge-screen" class="fade-in">
-        <div class="screen-header">
-            <i class="material-icons" onclick="closeConciergeScreen()">arrow_back</i>
-            Concierge Services
-        </div>
-        
+    <div id="concierge-screen" class="sub-screen fade-in">
+        <div class="screen-header"><i class="material-icons" onclick="closeSubScreen()">arrow_back</i>Concierge Service</div>
         <div class="menu-grid">
-            <div class="menu-item" onclick="openSubMenu('four_seasons')">
-                <i class="material-icons">travel_explore</i>
-                <span>4 Season Tour</span>
-            </div>
-            <div class="menu-item" onclick="openSubMenu('dining')">
-                <i class="material-icons">restaurant</i>
-                <span>Dining</span>
-            </div>
-            <div class="menu-item" onclick="openSubMenu('lounge')">
-                <i class="material-icons">wine_bar</i>
-                <span>Lounge</span>
-            </div>
-            <div class="menu-item" onclick="openSubMenu('wellness')">
-                <i class="material-icons">spa</i>
-                <span>Wellness</span>
-            </div>
-            <div class="menu-item" onclick="openSubMenu('facilities')">
-                <i class="material-icons">domain</i>
-                <span>Facilities</span>
-            </div>
-            <div class="menu-item" onclick="alert('키즈 프로그램 예약 페이지로 연결됩니다.')">
-                <i class="material-icons">child_care</i>
-                <span>Kids</span>
-            </div>
-            <div class="menu-item" onclick="alert('세차 예약 페이지로 연결됩니다.')">
-                <i class="material-icons">local_car_wash</i>
-                <span>Car Wash</span>
-            </div>
+            <div class="menu-item" onclick="openSheet('tour')"><i class="material-icons">map</i><span>4 Season Tour</span></div>
+            <div class="menu-item" onclick="alert('Kids 서비스 준비중')"><i class="material-icons">child_friendly</i><span>Kids</span></div>
+            <div class="menu-item" onclick="alert('세차 예약 서비스')"><i class="material-icons">local_car_wash</i><span>Car Wash</span></div>
+            <div class="menu-item" onclick="alert('병원 정보 안내')"><i class="material-icons">medical_services</i><span>Hospital Info</span></div>
         </div>
     </div>
 
-    <div id="valet-screen" class="fade-in">
-        <div class="valet-notice">
-            본 서비스는 발렛 출차만 가능하며,<br>귀하의 위치가 반얀트리 부산 해운대 호텔 내에 계실 때 서비스가 진행됩니다.
+    <div id="hotel-screen" class="sub-screen fade-in">
+        <div class="screen-header"><i class="material-icons" onclick="closeSubScreen()">arrow_back</i>Hotel Service</div>
+        <div class="menu-grid">
+            <div class="menu-item" onclick="alert('Dining 메뉴')"><i class="material-icons">restaurant</i><span>Dining</span></div>
+            <div class="menu-item" onclick="alert('Lounge 메뉴')"><i class="material-icons">local_bar</i><span>Lounge</span></div>
+            <div class="menu-item" onclick="alert('Wellness 서비스')"><i class="material-icons">spa</i><span>Wellness</span></div>
+            <div class="menu-item" onclick="alert('Facilities 안내')"><i class="material-icons">pool</i><span>Facilities</span></div>
+            <div class="menu-item" onclick="alert('Kids 프로그램')"><i class="material-icons">child_care</i><span>Kids</span></div>
+            <div class="menu-item" onclick="alert('연회장/웨딩 상담')"><i class="material-icons">celebration</i><span>연회장 및 웨딩</span></div>
         </div>
-        <input type="text" id="car-number" class="code-input" placeholder="차량 번호 입력 (예: 12가 3456)">
-        <button class="submit-btn" onclick="sendValetDuve()">출차 요청하기</button>
-        <div class="back-text" onclick="closeValetScreen()">닫기</div>
     </div>
 
-    <div id="bottom-sheet-overlay" onclick="closeSubMenu()"></div>
-    <div id="bottom-sheet">
-        <div class="sheet-header">
-            <span id="sheet-title" style="font-weight:bold; color:var(--primary-color); font-size:18px;">Menu</span>
-            <i class="material-icons sheet-close" onclick="closeSubMenu()">close</i>
+    <div id="valet-screen" class="sub-screen fade-in">
+        <div class="screen-header"><i class="material-icons" onclick="closeSubScreen()">arrow_back</i>Valet Service</div>
+        <div style="text-align:center; margin-bottom:30px; font-size:13px; color:#aaa; line-height:1.6;">
+            “본 서비스는 발렛 출차 전용이며,<br>호텔 내 체류 시에만 요청 가능합니다.”
         </div>
-        <div class="sheet-content" id="sheet-content"></div>
+        <div class="input-group" style="width:100%;">
+            <input type="text" id="car-number" class="code-input" placeholder="차량번호 입력 (예: 12가 3456)">
+            <button class="voice-btn" onclick="startVoiceRecognition('car-number')"><i class="material-icons">mic</i></button>
+        </div>
+        <button class="auth-btn" style="width:100%; background:var(--primary-color);" onclick="sendValet()">출차 요청하기</button>
     </div>
 
     <div class="bottom-nav" id="bottom-nav" style="display:none;">
-        <div class="nav-item active" onclick="goHome()">
-            <i class="material-icons">home</i>Home
-        </div>
-        <div class="nav-item" onclick="window.open('https://drive.google.com/file/d/1ICKC21t37n6B5ek9WQc_NNsLAfjAFfMo/view?usp=drive_link', '_blank')">
-            <i class="material-icons">map</i>Map
-        </div>
-        <div class="nav-item" onclick="checkLocationForValet()">
-            <i class="material-icons">directions_car</i>Valet
-        </div>
+        <div class="nav-item active" onclick="closeSubScreen()"><i class="material-icons">home</i>Home</div>
+        <div class="nav-item" onclick="window.open('https://drive.google.com/file/d/1ICKC21t37n6B5ek9WQc_NNsLAfjAFfMo/view?usp=drive_link')"><i class="material-icons">map</i>Map</div>
+        <div class="nav-item" onclick="checkLocationForValet()"><i class="material-icons">directions_car</i>Valet</div>
+    </div>
+
+    <div id="bottom-sheet-overlay" onclick="closeSheet()"></div>
+    <div id="bottom-sheet">
+        <div id="sheet-title" style="color:var(--primary-color); font-weight:bold; margin-bottom:15px; font-size:18px;"></div>
+        <div id="sheet-content"></div>
     </div>
 </div>
 
 <script>
-    // ========================================================
-    // [설정 값]
-    // ========================================================
-    const TARGET_LAT = 35.1618;  // 달맞이 맥도날드 위도
-    const TARGET_LNG = 129.1709; // 달맞이 맥도날드 경도
-    const NOTICE_MSG = "본 서비스는 발렛 출차만 가능하며, 귀하의 위치가 반얀트리 부산 해운대 호텔 내에 계실 때 서비스가 진행됩니다.";
-    
-    // Duve 시스템 채팅 링크 (추후 파라미터 연동을 위해 준비)
-    const DUVE_CHAT_URL = "https://duve.com/chat/placeholder"; 
-
-    // 서브 메뉴 데이터
-    const SUB_MENU_DATA = {
-        four_seasons: {
-            title: "4 Season Tour",
-            items: [
-                { name: "봄 (Spring)", url: "https://drive.google.com/file/d/1Ax4O2b49CM5I6-KnMebXjz9r8PHlgUmz/view?usp=drive_link" },
-                { name: "여름 (Summer)", url: "https://drive.google.com/file/d/1m1nqU2eRtS4YHKAPKqYEekQn7KF0i_sp/view?usp=drive_link" },
-                { name: "가을 (Autumn)", url: "https://drive.google.com/file/d/1d84lGgWJuSJUh3F-AJThTIq-B-t9usRd/view?usp=drive_link" },
-                { name: "겨울 (Winter)", url: "https://drive.google.com/file/d/1YpcJG6XhzOfaR_e0iDOY0y2yXt5f0t8S/view?usp=drive_link" }
-            ]
-        },
-        dining: { title: "Dining", items: [ { name: "올리아 (Olea)", url: "#" }, { name: "씨푸드 마켓 (Seafood Market)", url: "#" }, { name: "사프론 (Saffron)", url: "#" }, { name: "버티고 (Vertigo)", url: "#" } ] },
-        lounge: { title: "Lounge", items: [ { name: "버티고 바 (Vertigo Bar)", url: "#" }, { name: "로비 라운지 (Lobby Lounge)", url: "#" }, { name: "리아스 풀 바 (Rias Pool Bar)", url: "#" }, { name: "크러스트 (Krust)", url: "#" } ] },
-        wellness: { title: "Wellness", items: [ { name: "실내 수영장", url: "#" }, { name: "리아스 풀", url: "#" }, { name: "인피니티 풀", url: "#" }, { name: "리아스 탈라소 풀", url: "#" }, { name: "반얀트리 스파", url: "#" }, { name: "반얀트리 갤러리", url: "#" }, { name: "피트니스 클럽", url: "#" }, { name: "실내 골프 연습장", url: "#" }, { name: "요가실", url: "#" }, { name: "남성 사우나", url: "#" }, { name: "여성 사우나", url: "#" } ] },
-        facilities: { title: "Facilities", items: [ { name: "워터프런트 그랜드 볼룸", url: "#" }, { name: "신부대기실", url: "#" }, { name: "폐백실", url: "#" }, { name: "더 채플", url: "#" }, { name: "아너스 라운지", url: "#" }, { name: "레인저스 클럽", url: "#" } ] }
-    };
-
-    // ========================================================
-    // 인증 관련 함수
-    // ========================================================
-    function showFaceAuth() {
-        document.getElementById('auth-selection-screen').style.display = 'none';
-        document.getElementById('security-screen').style.display = 'flex';
+    // 1. 코드 인증 로직
+    function verifyCode() {
+        const val = document.getElementById('access-code').value.trim().toUpperCase();
+        if (val === "IAMWITHU") {
+            loginSuccess();
+        } else {
+            alert("인증 코드가 틀립니다.");
+        }
     }
 
-    function showCodeAuth() {
+    // 2. 안면인식 (카메라 실제 구동)
+    async function openFaceAuth() {
+        document.getElementById('auth-selection-screen').style.display = 'none';
+        document.getElementById('security-screen').style.display = 'flex';
+        const video = document.getElementById('video-feed');
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            video.srcObject = stream;
+            video.play();
+            // 실제 서버 인증 대신 3초 후 자동 로그인 시뮬레이션
+            setTimeout(() => {
+                stream.getTracks().forEach(t => t.stop());
+                loginSuccess();
+            }, 3500);
+        } catch (err) {
+            alert("카메라를 사용할 수 없습니다. 코드로 로그인해주세요.");
+            location.reload();
+        }
+    }
+
+    function openCodeAuth() {
         document.getElementById('auth-selection-screen').style.display = 'none';
         document.getElementById('code-auth-screen').style.display = 'flex';
     }
 
-    function backToAuthSelection() {
-        document.getElementById('security-screen').style.display = 'none';
-        document.getElementById('code-auth-screen').style.display = 'none';
-        document.getElementById('auth-selection-screen').style.display = 'flex';
-        // 비디오 스트림 끄기
-        if(video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
-        }
-    }
-
-    // 하드코딩된 코드 인증 (VIP4U)
-    function verifyCode() {
-        const code = document.getElementById('access-code').value.trim().toUpperCase(); // 대소문자 무시
-        if(!code) {
-            alert("코드를 입력해주세요.");
-            return;
-        }
-        
-        if (code === "VIP4U") {
-            unlockApp();
-        } else {
-            alert("코드 오류입니다. 다시 확인해 주세요.");
-        }
-    }
-
-    // 안면 인식 카메라 실행
-    const video = document.getElementById('video-feed');
-    function startCamera() {
-        const startBtn = document.getElementById('start-btn');
-        const statusMsg = document.getElementById('status-msg');
-
-        startBtn.style.display = 'none';
-        statusMsg.innerText = "카메라를 준비 중입니다...";
-
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(stream => {
-                video.srcObject = stream;
-                video.style.display = 'block'; 
-                document.getElementById('camera-icon').style.display = 'none';
-                document.getElementById('scan-line').style.display = 'block';
-                video.play();
-                statusMsg.innerText = "얼굴을 스캔합니다...";
-                // 2.5초 후 스캔 성공
-                setTimeout(unlockApp, 2500); 
-            }).catch(() => {
-                alert("카메라 권한이 없거나 지원되지 않습니다. 앱으로 진입합니다.");
-                unlockApp();
-            });
-        } else {
-            alert("카메라를 지원하지 않는 환경입니다. 앱으로 진입합니다.");
-            unlockApp();
-        }
-    }
-
-    // 앱 메인화면 진입 (잠금 해제)
-    function unlockApp() {
-        document.getElementById('security-screen').style.display = 'none';
-        document.getElementById('code-auth-screen').style.display = 'none';
+    function loginSuccess() {
         document.getElementById('auth-selection-screen').style.display = 'none';
-        
+        document.getElementById('security-screen').style.display = 'none';
+        document.getElementById('code-auth-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
         document.getElementById('bottom-nav').style.display = 'flex';
-        
-        if(video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
+    }
+
+    // 3. 음성 인식 기능 (STT)
+    function startVoiceRecognition(targetId) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+            return;
         }
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ko-KR';
+        const btn = event.currentTarget;
+        
+        btn.classList.add('listening');
+        recognition.start();
+
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            document.getElementById(targetId).value = text;
+            btn.classList.remove('listening');
+        };
+        recognition.onerror = () => btn.classList.remove('listening');
+        recognition.onend = () => btn.classList.remove('listening');
     }
 
-    // ========================================================
-    // 네비게이션 & 화면 이동
-    // ========================================================
-    function goHome() {
-        document.getElementById('valet-screen').style.display = 'none';
-        document.getElementById('concierge-screen').style.display = 'none';
-        document.getElementById('main-app').style.display = 'flex';
-    }
-
-    function openConciergeScreen() {
+    // 4. 화면 제어 로직
+    function showSubScreen(type) {
         document.getElementById('main-app').style.display = 'none';
-        document.getElementById('concierge-screen').style.display = 'flex';
+        document.querySelectorAll('.sub-screen').forEach(s => s.style.display = 'none');
+        document.getElementById(type + '-screen').style.display = 'flex';
     }
-    
-    function closeConciergeScreen() {
-        document.getElementById('concierge-screen').style.display = 'none';
+
+    function closeSubScreen() {
+        document.querySelectorAll('.sub-screen').forEach(s => s.style.display = 'none');
         document.getElementById('main-app').style.display = 'flex';
     }
 
-    // ========================================================
-    // 발렛 서비스 (위치 검증 후 Duve 연동)
-    // ========================================================
+    // 5. 위치 기반 발렛 확인 (달맞이 맥도날드 1km)
     function checkLocationForValet() {
-        if (!navigator.geolocation) {
-            alert("이 기기에서는 위치 정보를 지원하지 않습니다.");
-            return;
-        }
-
-        // HTTPS 보안 환경이 아닐 경우 테스트를 위해 패스시킬지 여부 안내
-        if (!window.isSecureContext) {
-            alert("보안 연결(HTTPS) 환경이 아니어 위치를 확인할 수 없습니다. 브라우저 설정에 따라 작동하지 않을 수 있습니다.");
-        }
-
         navigator.geolocation.getCurrentPosition((pos) => {
-            const latDiff = pos.coords.latitude - TARGET_LAT;
-            const lngDiff = pos.coords.longitude - TARGET_LNG;
-            const dist = Math.sqrt(Math.pow(latDiff, 2) + Math.pow(lngDiff, 2));
-            
-            // 0.009 = 약 1km 반경
-            if (dist < 0.009) {
-                showValetScreen();
-            } else {
-                alert(NOTICE_MSG);
-            }
-        }, (err) => {
-            alert(NOTICE_MSG); // 권한 거부 시
-        }, { enableHighAccuracy: true });
+            const dist = Math.sqrt(Math.pow(pos.coords.latitude - 35.1618, 2) + Math.pow(pos.coords.longitude - 129.1709, 2));
+            if (dist < 0.009) showSubScreen('valet');
+            else alert("서비스 지역이 아닙니다. 호텔 내에서 다시 시도해주세요.");
+        }, () => alert("위치 권한이 필요합니다."));
     }
 
-    function showValetScreen() {
-        document.getElementById('main-app').style.display = 'none';
-        document.getElementById('concierge-screen').style.display = 'none';
-        document.getElementById('valet-screen').style.display = 'flex';
+    function sendValet() {
+        const num = document.getElementById('car-number').value;
+        if(!num) return alert("번호를 입력하세요.");
+        window.open(`https://wa.me/821050280073?text=발렛요청:${encodeURIComponent(num)}`, '_blank');
     }
 
-    function closeValetScreen() {
-        document.getElementById('valet-screen').style.display = 'none';
-        goHome();
-        document.getElementById('car-number').value = ''; 
-    }
-
-    function sendValetDuve() {
-        const carNum = document.getElementById('car-number').value.trim();
-        if (!carNum) {
-            alert("차량 번호를 입력해주세요.");
-            return;
-        }
-        // Duve 시스템용 텍스트/파라미터 연동
-        const msg = encodeURIComponent(`[발렛 출차 요청] 차량번호: ${carNum}`);
-        window.open(`${DUVE_CHAT_URL}?message=${msg}`, '_blank');
-    }
-
-    // ========================================================
-    // 바텀 시트 (서브 메뉴)
-    // ========================================================
-    function openSubMenu(cat) {
-        const data = SUB_MENU_DATA[cat];
-        document.getElementById('sheet-title').innerText = data.title;
-        const content = document.getElementById('sheet-content');
-        content.innerHTML = '';
-        
-        data.items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'sub-item';
-            div.innerHTML = `<span>${item.name}</span><i class="material-icons">chevron_right</i>`;
-            div.onclick = () => window.open(item.url, '_blank');
-            content.appendChild(div);
-        });
-        
+    // 6. 바텀 시트 로직 (관광 안내 전용)
+    function openSheet(mode) {
         const overlay = document.getElementById('bottom-sheet-overlay');
         const sheet = document.getElementById('bottom-sheet');
+        const content = document.getElementById('sheet-content');
+        const title = document.getElementById('sheet-title');
+        
+        title.innerText = "4 Season Tour Drive";
+        content.innerHTML = `
+            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1Ax4O2b49CM5I6-KnMebXjz9r8PHlgUmz/view')"><span>🌸 Spring Drive</span><i class="material-icons">open_in_new</i></div>
+            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1m1nqU2eRtS4YHKAPKqYEekQn7KF0i_sp/view')"><span>🌊 Summer Drive</span><i class="material-icons">open_in_new</i></div>
+            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1d84lGgWJuSJUh3F-AJThTIq-B-t9usRd/view')"><span>🍂 Autumn Drive</span><i class="material-icons">open_in_new</i></div>
+            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1YpcJG6XhzOfaR_e0iDOY0y2yXt5f0t8S/view')"><span>❄️ Winter Drive</span><i class="material-icons">open_in_new</i></div>
+        `;
         
         overlay.style.display = 'block';
-        setTimeout(() => {
-            overlay.style.opacity = '1';
-            sheet.style.bottom = '0';
-        }, 10);
+        setTimeout(() => sheet.style.bottom = '0', 50);
     }
 
-    function closeSubMenu() {
-        const overlay = document.getElementById('bottom-sheet-overlay');
-        const sheet = document.getElementById('bottom-sheet');
-        
-        sheet.style.bottom = '-100%';
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-            overlay.style.display = 'none';
-        }, 300);
+    function closeSheet() {
+        document.getElementById('bottom-sheet').style.bottom = '-100%';
+        setTimeout(() => document.getElementById('bottom-sheet-overlay').style.display = 'none', 300);
     }
 </script>
 </body>
