@@ -14,13 +14,13 @@
 
         /* --- 로그인 및 인증 --- */
         #auth-selection-screen, #security-screen, #code-auth-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 1100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .logo-intro { font-size: 22px; font-weight: 300; letter-spacing: 2px; margin-bottom: 50px; color: var(--primary-color); text-align: center; }
+        .logo-intro { font-size: 22px; font-weight: 300; letter-spacing: 2px; margin-bottom: 50px; color: var(--primary-color); text-align: center; line-height: 1.5; }
         .auth-btn { width: 80%; background-color: var(--card-bg); color: #fff; border: 1px solid var(--primary-color); padding: 15px; border-radius: 10px; font-size: 16px; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
         /* --- 카메라 화면 --- */
         .camera-container { position: relative; width: 240px; height: 240px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary-color); margin-bottom: 20px; background: #1a1a1a; }
         #video-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); animation: scan 2s infinite linear; }
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); animation: scan 2s infinite linear; display: none; }
         @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
 
         /* --- 입력창 및 음성 버튼 --- */
@@ -35,12 +35,13 @@
         .hotel-name { font-size: 18px; font-weight: bold; color: var(--primary-color); margin-bottom: 20px; }
         .welcome-text { font-size: 20px; margin-bottom: 25px; line-height: 1.4; }
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .menu-item { background-color: var(--card-bg); border-radius: 12px; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #333; }
-        .menu-item i { font-size: 30px; color: var(--primary-color); margin-bottom: 10px; }
-        .menu-item span { font-size: 13px; text-align: center; color: #ddd; }
+        .menu-item { background-color: var(--card-bg); border-radius: 12px; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #333; transition: 0.2s; }
+        .menu-item:active { background-color: #2a2a2a; border-color: var(--primary-color); }
+        .menu-item i { font-size: 32px; color: var(--primary-color); margin-bottom: 10px; }
+        .menu-item span { font-size: 13px; text-align: center; color: #ddd; font-weight: 500; }
 
         /* --- 서브 화면들 --- */
-        .sub-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-color); z-index: 500; padding: 25px 20px; box-sizing: border-box; flex-direction: column; }
+        .sub-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-color); z-index: 500; padding: 25px 20px; box-sizing: border-box; flex-direction: column; overflow-y: auto; }
         .screen-header { display: flex; align-items: center; margin-bottom: 25px; font-size: 18px; font-weight: bold; color: var(--primary-color); }
         .screen-header i { margin-right: 15px; cursor: pointer; }
 
@@ -69,16 +70,16 @@
         <div class="logo-intro">FACE ID SCANNING</div>
         <div class="camera-container">
             <video id="video-feed" playsinline muted></video>
-            <div class="scan-line"></div>
+            <div class="scan-line" id="face-scan-line"></div>
         </div>
-        <div id="face-status" style="color:var(--primary-color); margin-bottom:20px;">카메라를 정면으로 응시해주세요</div>
+        <div id="face-status" style="color:var(--primary-color); margin-bottom:20px; text-align:center;">정면을 응시해 주세요</div>
         <button class="auth-btn" style="width:60%;" onclick="location.reload()">취소</button>
     </div>
 
     <div id="code-auth-screen" style="display:none;">
-        <div class="logo-intro">ENTER CODE</div>
+        <div class="logo-intro">ENTER PASSCODE</div>
         <div class="input-group">
-            <input type="text" id="access-code" class="code-input" placeholder="코드 입력 (IAMWITHU)">
+            <input type="text" id="access-code" class="code-input" placeholder="">
             <button class="voice-btn" onclick="startVoiceRecognition('access-code')"><i class="material-icons">mic</i></button>
         </div>
         <button class="auth-btn" onclick="verifyCode()" style="background:var(--primary-color)">로그인</button>
@@ -100,21 +101,21 @@
         <div class="screen-header"><i class="material-icons" onclick="closeSubScreen()">arrow_back</i>Concierge Service</div>
         <div class="menu-grid">
             <div class="menu-item" onclick="openSheet('tour')"><i class="material-icons">map</i><span>4 Season Tour</span></div>
-            <div class="menu-item" onclick="alert('Kids 서비스 준비중')"><i class="material-icons">child_friendly</i><span>Kids</span></div>
+            <div class="menu-item" onclick="alert('Kids 서비스 준비 중')"><i class="material-icons">child_friendly</i><span>Kids</span></div>
             <div class="menu-item" onclick="alert('세차 예약 서비스')"><i class="material-icons">local_car_wash</i><span>Car Wash</span></div>
-            <div class="menu-item" onclick="alert('병원 정보 안내')"><i class="material-icons">medical_services</i><span>Hospital Info</span></div>
+            <div class="menu-item" onclick="alert('인근 대형 병원 정보 안내')"><i class="material-icons">medical_services</i><span>Hospital<br>Information</span></div>
         </div>
     </div>
 
     <div id="hotel-screen" class="sub-screen fade-in">
         <div class="screen-header"><i class="material-icons" onclick="closeSubScreen()">arrow_back</i>Hotel Service</div>
         <div class="menu-grid">
-            <div class="menu-item" onclick="alert('Dining 메뉴')"><i class="material-icons">restaurant</i><span>Dining</span></div>
-            <div class="menu-item" onclick="alert('Lounge 메뉴')"><i class="material-icons">local_bar</i><span>Lounge</span></div>
-            <div class="menu-item" onclick="alert('Wellness 서비스')"><i class="material-icons">spa</i><span>Wellness</span></div>
-            <div class="menu-item" onclick="alert('Facilities 안내')"><i class="material-icons">pool</i><span>Facilities</span></div>
-            <div class="menu-item" onclick="alert('Kids 프로그램')"><i class="material-icons">child_care</i><span>Kids</span></div>
-            <div class="menu-item" onclick="alert('연회장/웨딩 상담')"><i class="material-icons">celebration</i><span>연회장 및 웨딩</span></div>
+            <div class="menu-item" onclick="alert('Dining 예약 페이지 연결 예정')"><i class="material-icons">restaurant</i><span>Dining</span></div>
+            <div class="menu-item" onclick="alert('Lounge 안내 페이지 연결 예정')"><i class="material-icons">local_bar</i><span>Lounge</span></div>
+            <div class="menu-item" onclick="alert('Wellness 서비스 안내 페이지 연결 예정')"><i class="material-icons">spa</i><span>Wellness</span></div>
+            <div class="menu-item" onclick="alert('Facilities 안내 페이지 연결 예정')"><i class="material-icons">pool</i><span>Facilities</span></div>
+            <div class="menu-item" onclick="alert('호텔 내 Kids 프로그램 예약 페이지 연결 예정')"><i class="material-icons">child_care</i><span>Kids</span></div>
+            <div class="menu-item" onclick="alert('연회장 및 웨딩 상담 페이지 연결 예정')"><i class="material-icons">celebration</i><span>연회장 및 웨딩</span></div>
         </div>
     </div>
 
@@ -124,7 +125,7 @@
             “본 서비스는 발렛 출차 전용이며,<br>호텔 내 체류 시에만 요청 가능합니다.”
         </div>
         <div class="input-group" style="width:100%;">
-            <input type="text" id="car-number" class="code-input" placeholder="차량번호 입력 (예: 12가 3456)">
+            <input type="text" id="car-number" class="code-input" placeholder="차량번호 입력">
             <button class="voice-btn" onclick="startVoiceRecognition('car-number')"><i class="material-icons">mic</i></button>
         </div>
         <button class="auth-btn" style="width:100%; background:var(--primary-color);" onclick="sendValet()">출차 요청하기</button>
@@ -132,7 +133,7 @@
 
     <div class="bottom-nav" id="bottom-nav" style="display:none;">
         <div class="nav-item active" onclick="closeSubScreen()"><i class="material-icons">home</i>Home</div>
-        <div class="nav-item" onclick="window.open('https://drive.google.com/file/d/1ICKC21t37n6B5ek9WQc_NNsLAfjAFfMo/view?usp=drive_link')"><i class="material-icons">map</i>Map</div>
+        <div class="nav-item" onclick="window.open('https://drive.google.com/file/d/1ICKC21t37n6B5ek9WQc_NNsLAfjAFfMo/view')"><i class="material-icons">map</i>Map</div>
         <div class="nav-item" onclick="checkLocationForValet()"><i class="material-icons">directions_car</i>Valet</div>
     </div>
 
@@ -147,30 +148,41 @@
     // 1. 코드 인증 로직
     function verifyCode() {
         const val = document.getElementById('access-code').value.trim().toUpperCase();
-        if (val === "IAMWITHU") {
+        if (val === "FOR YOU") {
             loginSuccess();
         } else {
             alert("인증 코드가 틀립니다.");
         }
     }
 
-    // 2. 안면인식 (카메라 실제 구동)
+    // 2. 안면인식 (카메라 실제 구동 및 구글 시트 데이터 대조 시뮬레이션)
+    const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1X1O3wvZ2j_sUeJSifv0Uiex55kAzFEhtZ5vgTlgmIwY/edit";
+
     async function openFaceAuth() {
         document.getElementById('auth-selection-screen').style.display = 'none';
         document.getElementById('security-screen').style.display = 'flex';
         const video = document.getElementById('video-feed');
+        const scanLine = document.getElementById('face-scan-line');
         
         try {
+            // 카메라 스트림 요청
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
             video.srcObject = stream;
             video.play();
-            // 실제 서버 인증 대신 3초 후 자동 로그인 시뮬레이션
+            scanLine.style.display = 'block';
+
+            // 실제 구글 시트 데이터를 가져오는 시도 (시뮬레이션)
+            // 실제 환경에서는 구글 API 또는 CSV 내보내기 링크를 사용하여 데이터를 파싱할 수 있습니다.
+            console.log("DB 확인 중: ", GOOGLE_SHEET_URL);
+
             setTimeout(() => {
+                // 인증 성공 처리
                 stream.getTracks().forEach(t => t.stop());
                 loginSuccess();
-            }, 3500);
+            }, 4000); 
+
         } catch (err) {
-            alert("카메라를 사용할 수 없습니다. 코드로 로그인해주세요.");
+            alert("카메라를 실행할 수 없습니다. HTTPS 환경인지 확인하거나 권한을 허용해 주세요.");
             location.reload();
         }
     }
@@ -205,9 +217,7 @@
         recognition.onresult = (event) => {
             const text = event.results[0][0].transcript;
             document.getElementById(targetId).value = text;
-            btn.classList.remove('listening');
         };
-        recognition.onerror = () => btn.classList.remove('listening');
         recognition.onend = () => btn.classList.remove('listening');
     }
 
@@ -225,20 +235,24 @@
 
     // 5. 위치 기반 발렛 확인 (달맞이 맥도날드 1km)
     function checkLocationForValet() {
+        if (!navigator.geolocation) {
+            alert("위치 정보를 지원하지 않는 브라우저입니다.");
+            return;
+        }
         navigator.geolocation.getCurrentPosition((pos) => {
             const dist = Math.sqrt(Math.pow(pos.coords.latitude - 35.1618, 2) + Math.pow(pos.coords.longitude - 129.1709, 2));
             if (dist < 0.009) showSubScreen('valet');
-            else alert("서비스 지역이 아닙니다. 호텔 내에서 다시 시도해주세요.");
-        }, () => alert("위치 권한이 필요합니다."));
+            else alert("서비스 가능 지역이 아닙니다. (반얀트리 호텔 내에서 사용 가능)");
+        }, () => alert("위치 권한을 허용해 주세요."));
     }
 
     function sendValet() {
         const num = document.getElementById('car-number').value;
-        if(!num) return alert("번호를 입력하세요.");
-        window.open(`https://wa.me/821050280073?text=발렛요청:${encodeURIComponent(num)}`, '_blank');
+        if(!num) return alert("차량 번호를 입력하세요.");
+        window.open(`https://wa.me/821050280073?text=발렛출차요청:${encodeURIComponent(num)}`, '_blank');
     }
 
-    // 6. 바텀 시트 로직 (관광 안내 전용)
+    // 6. 바텀 시트 (관광 안내)
     function openSheet(mode) {
         const overlay = document.getElementById('bottom-sheet-overlay');
         const sheet = document.getElementById('bottom-sheet');
