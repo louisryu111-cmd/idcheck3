@@ -3,273 +3,425 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Banyan Tree Busan Concierge</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <title>Banyan Tree Busan | Professional Security</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        :root { --primary-color: #8E7958; --bg-color: #121212; --card-bg: #1E1E1E; --text-color: #FFFFFF; }
-        body { margin: 0; padding: 0; background-color: #000; font-family: 'Noto Sans KR', sans-serif; color: var(--text-color); -webkit-tap-highlight-color: transparent; }
-        #app-container { max-width: 480px; margin: 0 auto; background-color: var(--bg-color); height: 100vh; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* 애니메이션 */
-        .fade-in { animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- 로그인 화면들 --- */
-        #auth-selection-screen, #security-screen, #code-auth-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 1100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .logo-intro { font-size: 22px; font-weight: 300; letter-spacing: 2px; margin-bottom: 50px; color: var(--primary-color); text-align: center; line-height: 1.5; }
-        .auth-btn { width: 80%; background-color: var(--card-bg); color: #fff; border: 1px solid var(--primary-color); padding: 15px; border-radius: 10px; font-size: 16px; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
-        /* --- 실시간 안면 인식 UI --- */
-        .camera-container { position: relative; width: 260px; height: 260px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary-color); margin-bottom: 20px; background: #1a1a1a; }
-        #video-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        #face-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
-        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); animation: scan 2s infinite linear; }
-        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
-
-        /* --- 입력 UI --- */
-        .input-group { width: 80%; position: relative; display: flex; align-items: center; margin-bottom: 20px; }
-        .code-input { width: 100%; background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 18px; font-size: 18px; border-radius: 10px; text-align: center; outline: none; }
-        .voice-btn { position: absolute; right: 15px; color: var(--primary-color); cursor: pointer; background: none; border: none; }
-
-        /* --- 메인 홈 --- */
-        #main-app { display: none; flex: 1; flex-direction: column; padding: 25px 20px; overflow-y: auto; padding-bottom: 100px; }
-        .hotel-name { font-size: 18px; font-weight: bold; color: var(--primary-color); margin-bottom: 10px; }
-        .welcome-text { font-size: 20px; margin-bottom: 30px; line-height: 1.4; font-weight: 300; }
-        
-        /* 그리드 메뉴 */
-        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
-        .menu-item { background-color: var(--card-bg); border-radius: 15px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #333; transition: 0.3s; }
-        .menu-item:active { transform: scale(0.95); background-color: #2a2a2a; }
-        .menu-item i { font-size: 35px; color: var(--primary-color); margin-bottom: 10px; }
-        .menu-item span { font-size: 14px; text-align: center; color: #eee; font-weight: 500; }
-
-        /* 하단 단일 메뉴 (Map) */
-        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: 85px; background-color: #111; display: none; flex-direction: column; align-items: center; justify-content: center; border-top: 1px solid #222; z-index: 100; }
-        .map-trigger { color: var(--primary-color); display: flex; flex-direction: column; align-items: center; cursor: pointer; margin-top: 5px; }
-        .map-trigger i { font-size: 28px; }
-        
-        /* 저작권 표시 영역 */
-        .copyright-area { font-size: 10px; color: #555; text-align: center; margin-top: 10px; letter-spacing: -0.2px; line-height: 1.4; padding: 0 20px; }
-
-        /* 서브 화면 */
-        .sub-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-color); z-index: 500; padding: 25px 20px; box-sizing: border-box; flex-direction: column; }
-        .screen-header { display: flex; align-items: center; margin-bottom: 25px; font-size: 18px; font-weight: bold; color: var(--primary-color); }
-        .screen-header i { margin-right: 15px; cursor: pointer; }
-
-        /* 바텀 시트 */
-        #bottom-sheet-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1200; }
-        #bottom-sheet { position: absolute; bottom: -100%; left: 0; width: 100%; background-color: #1a1a1a; border-radius: 25px 25px 0 0; z-index: 1201; transition: bottom 0.3s ease; padding: 25px; box-sizing: border-box; }
-        .sub-list-item { padding: 20px 0; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; color: #ddd; font-size: 16px; }
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400..900;1,400..900&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        :root { --banyan-gold: #c5a059; --banyan-dark: #0a0c10; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--banyan-dark); color: #ffffff; overflow-x: hidden; }
+        .serif { font-family: 'Bodoni Moda', serif; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(197, 160, 89, 0.25); }
+        .video-container { position: relative; width: 100%; border-radius: 2.5rem; overflow: hidden; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7); border: 1px solid rgba(197, 160, 89, 0.2); }
+        #webcam, #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .btn-premium { background: linear-gradient(135deg, #c5a059 0%, #a38141 100%); color: #000; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-premium:disabled { opacity: 0.2; transform: scale(0.98); }
+        .log-box::-webkit-scrollbar { width: 2px; }
+        .log-box::-webkit-scrollbar-thumb { background: var(--banyan-gold); }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-<div id="app-container">
-    <div id="auth-selection-screen">
-        <div class="logo-intro">BANYAN TREE<br><span style="font-size:14px; color:#aaa;">BUSAN HAEUNDAE</span></div>
-        <button class="auth-btn" onclick="initFaceID()"><i class="material-icons">face</i>안면인식 로그인</button>
-        <button class="auth-btn" onclick="openCodeAuth()"><i class="material-icons">vpn_key</i>인증 코드로 로그인</button>
-    </div>
-
-    <div id="security-screen" style="display:none;">
-        <div class="logo-intro" id="face-title">FACE ID VERIFICATION</div>
-        <div class="camera-container">
-            <video id="video-feed" playsinline muted></video>
-            <canvas id="face-canvas"></canvas>
-            <div class="scan-line" id="scan-bar" style="display:none;"></div>
+    <header class="p-8 flex justify-between items-center">
+        <div class="space-y-1">
+            <p class="serif text-[10px] tracking-[0.4em] text-[#c5a059] uppercase">Banyan Tree</p>
+            <h1 class="text-xl font-light tracking-widest uppercase">Busan</h1>
         </div>
-        <div id="face-status" style="color:var(--primary-color); margin-bottom:20px; text-align:center; font-size:14px;">카메라 모델 로드 중...</div>
-        <button class="auth-btn" style="width:50%; font-size:14px; background:none;" onclick="location.reload()">취소</button>
-    </div>
-
-    <div id="code-auth-screen" style="display:none;">
-        <div class="logo-intro">MEMBER ACCESS</div>
-        <div class="input-group">
-            <input type="text" id="access-code" class="code-input" placeholder="">
-            <button class="voice-btn" onclick="startVoiceRecognition('access-code')"><i class="material-icons">mic</i></button>
+        <div id="connection-status" class="flex items-center text-[10px] text-slate-500 uppercase tracking-tighter">
+            <span class="status-dot w-2 h-2 rounded-full bg-red-500 animate-pulse mr-2"></span> Offline
         </div>
-        <button class="auth-btn" onclick="verifyCode()" style="background:var(--primary-color)">로그인</button>
-        <div style="margin-top:20px; color:#555; font-size:12px; cursor:pointer;" onclick="location.reload()">뒤로 가기</div>
-    </div>
+    </header>
 
-    <div id="main-app">
-        <div class="hotel-name">Banyantree Busan Haeundae</div>
-        <div class="welcome-text">반갑습니다, 회원님.<br><b>컨시어지 서비스를 시작합니다.</b></div>
+    <main class="flex-1 px-6 max-w-5xl mx-auto w-full pb-10 space-y-6">
         
-        <div class="menu-grid">
-            <div class="menu-item" onclick="showSubScreen('concierge')"><i class="material-icons">room_service</i><span>Concierge<br>Service</span></div>
-            <div class="menu-item" onclick="showSubScreen('hotel')"><i class="material-icons">apartment</i><span>Hotel<br>Service</span></div>
-            <div class="menu-item" onclick="window.open('https://www.banyantree.com/booking', '_blank')"><i class="material-icons">event_available</i><span>Member<br>Booking</span></div>
-            <div class="menu-item" onclick="checkLocationForValet()"><i class="material-icons">directions_car</i><span>Valet<br>Parking</span></div>
+        <!-- Login Section -->
+        <div id="login-panel" class="glass-panel max-w-lg mx-auto rounded-[3.5rem] p-12 text-center space-y-10 mt-6">
+            <div class="space-y-2">
+                <div class="serif text-5xl text-[#c5a059] font-light italic">Access</div>
+                <div class="h-px w-12 bg-[#c5a059]/30 mx-auto"></div>
+            </div>
+            <p class="text-[11px] text-slate-400 font-light leading-relaxed tracking-tight">
+                반얀트리 부산의 프라이빗 서비스를 위해<br>보안 인증이 필요합니다.
+            </p>
+            <button id="btn-login" class="w-full btn-premium py-5 rounded-full font-bold text-xs tracking-[0.2em] uppercase shadow-2xl">
+                Google 계정 인증 시작
+            </button>
         </div>
-    </div>
 
-    <div id="concierge-screen" class="sub-screen fade-in">
-        <div class="screen-header"><i class="material-icons" onclick="closeSubScreen()">arrow_back</i>Concierge Service</div>
-        <div class="menu-grid">
-            <div class="menu-item" onclick="openSheet('tour')"><i class="material-icons">map</i><span>4 Season Tour</span></div>
-            <div class="menu-item" onclick="alert('Kids 전용 서비스로 연결됩니다.')"><i class="material-icons">child_friendly</i><span>Kids</span></div>
-            <div class="menu-item" onclick="alert('세차 요청 페이지로 연결됩니다.')"><i class="material-icons">local_car_wash</i><span>Car Wash</span></div>
-            <div class="menu-item" onclick="alert('인근 거점 병원 정보를 안내합니다.')"><i class="material-icons">medical_services</i><span>Hospital<br>Information</span></div>
-        </div>
-    </div>
-
-    <div id="hotel-screen" class="sub-screen fade-in">
-        <div class="screen-header"><i class="material-icons" onclick="closeSubScreen()">arrow_back</i>Hotel Service</div>
-        <div class="menu-grid">
-            <div class="menu-item" onclick="alert('Dining 예약 페이지 연결 예정')"><i class="material-icons">restaurant</i><span>Dining</span></div>
-            <div class="menu-item" onclick="alert('Lounge 안내 페이지 연결 예정')"><i class="material-icons">local_bar</i><span>Lounge</span></div>
-            <div class="menu-item" onclick="alert('Wellness 안내 페이지 연결 예정')"><i class="material-icons">spa</i><span>Wellness</span></div>
-            <div class="menu-item" onclick="alert('Facilities 안내 페이지 연결 예정')"><i class="material-icons">pool</i><span>Facilities</span></div>
-            <div class="menu-item" onclick="alert('Kids 프로그램 페이지 연결 예정')"><i class="material-icons">child_care</i><span>Kids</span></div>
-            <div class="menu-item" onclick="alert('연회장/웨딩 상담 페이지 연결 예정')"><i class="material-icons">celebration</i><span>연회장 및 웨딩</span></div>
-        </div>
-    </div>
-
-    <div class="bottom-nav" id="bottom-nav">
-        <div class="map-trigger" onclick="window.open('https://drive.google.com/file/d/1ICKC21t37n6B5ek9WQc_NNsLAfjAFfMo/view')">
-            <i class="material-icons">map</i>
-            <span>Residences Map</span>
-        </div>
-        <div class="copyright-area">
-            © 2024 Banyan Tree Busan Haeundae. All Rights Reserved.<br>
-            Managed by Banyan Tree Hotels & Resorts.
-        </div>
-    </div>
-
-    <div id="bottom-sheet-overlay" onclick="closeSheet()"></div>
-    <div id="bottom-sheet">
-        <div id="sheet-title" style="color:var(--primary-color); font-weight:bold; margin-bottom:15px; font-size:18px;"></div>
-        <div id="sheet-content"></div>
-    </div>
-</div>
-
-<script>
-    const GOOGLE_SHEET_DB = "https://docs.google.com/spreadsheets/d/1X1O3wvZ2j_sUeJSifv0Uiex55kAzFEhtZ5vgTlgmIwY/edit";
-
-    // 1. 코드 인증 (확장된 코드 리스트)
-    function verifyCode() {
-        const codes = ["foryou", "for you", "포유", "포 유"];
-        const input = document.getElementById('access-code').value.trim().toLowerCase();
-        
-        if (codes.includes(input)) {
-            loginSuccess();
-        } else {
-            alert("유효하지 않은 인증 코드입니다.");
-        }
-    }
-
-    // 2. 안면인식 시스템 (실제 얼굴 감지 연동)
-    async function initFaceID() {
-        document.getElementById('auth-selection-screen').style.display = 'none';
-        document.getElementById('security-screen').style.display = 'flex';
-        const status = document.getElementById('face-status');
-        
-        try {
-            // 모델 로드
-            status.innerText = "안전한 접속을 위해 얼굴 인식 엔진을 로드합니다...";
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
-                faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/')
-            ]);
-            startFaceDetection();
-        } catch (e) {
-            status.innerText = "HTTPS 환경이 아니거나 엔진 로드에 실패했습니다.";
-            console.error(e);
-        }
-    }
-
-    async function startFaceDetection() {
-        const video = document.getElementById('video-feed');
-        const status = document.getElementById('face-status');
-        const scanBar = document.getElementById('scan-bar');
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-        video.srcObject = stream;
-        video.play();
-
-        status.innerText = "얼굴을 프레임 안으로 맞춰주세요.";
-
-        const detectLoop = setInterval(async () => {
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+        <!-- Main Workspace -->
+        <div id="app-panel" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-1000">
             
-            if (detections.length > 0) {
-                // 얼굴이 감지됨!
-                scanBar.style.display = 'block';
-                status.innerText = "회원 정보 대조 중... (Google DB 연결)";
+            <!-- Left Column: Camera -->
+            <div class="space-y-4">
+                <div class="video-container aspect-video lg:aspect-[4/3]">
+                    <video id="webcam" autoplay playsinline muted></video>
+                    <canvas id="overlay"></canvas>
+                    
+                    <div id="loading-overlay" class="absolute inset-0 bg-[#0a0c10] flex flex-col items-center justify-center text-center">
+                        <div class="w-16 h-16 border-t-2 border-[#c5a059] rounded-full animate-spin mb-6"></div>
+                        <p class="serif text-sm text-[#c5a059] tracking-[0.3em] uppercase">Syncing Security</p>
+                        <p id="sync-detail" class="text-[9px] text-slate-600 mt-4 uppercase tracking-widest font-mono italic">Initializing Face-AI...</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-3">
+                    <button id="btn-start" disabled class="col-span-3 btn-premium py-4 rounded-full font-bold text-[11px] tracking-[0.2em] uppercase">시스템 가동</button>
+                    <button id="btn-next-camera" title="카메라 전환" class="col-span-1 bg-white/5 border border-[#c5a059]/30 rounded-full flex items-center justify-center text-[#c5a059] active:scale-90 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Results & Logs -->
+            <div class="space-y-6">
+                <!-- History Container -->
+                <div id="history-container" class="space-y-4 min-h-[16rem]">
+                    <!-- Current (Top) -->
+                    <div id="card-current" class="hidden relative glass-panel rounded-[2.5rem] p-8 transition-all duration-500 border-2 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                        <div class="absolute top-5 right-5 bg-black/50 border px-3 py-1 rounded-full text-[10px] font-bold tracking-widest flex items-center gap-1.5" id="current-badge">
+                            <div class="w-1.5 h-1.5 rounded-full animate-ping" id="current-dot"></div>
+                            <span id="current-percent">0</span>% <span id="current-status">MATCH</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-6 mt-2">
+                            <div class="relative">
+                                <img id="current-img" src="" class="w-20 h-20 rounded-full object-cover border-2 p-1 bg-black/40">
+                                <div class="absolute inset-0 rounded-full border border-white/20 animate-pulse" id="current-img-ring"></div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="serif text-[10px] tracking-widest uppercase" id="current-label">Verified Member</div>
+                                <div id="current-name" class="text-2xl font-light tracking-tight text-white">---</div>
+                                <div id="current-dept" class="text-slate-500 text-xs font-light">---</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Previous (Bottom) -->
+                    <div id="card-previous" class="hidden relative glass-panel rounded-[2rem] p-5 opacity-50 scale-[0.98] transition-all duration-500 filter grayscale-[50%]">
+                        <div class="absolute top-4 right-4 bg-black/50 border px-2 py-1 rounded-full text-[9px] font-bold tracking-widest flex items-center gap-1" id="prev-badge">
+                            <span id="prev-percent">0</span>% <span id="prev-status">MATCH</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <img id="prev-img" src="" class="w-14 h-14 rounded-full object-cover border p-1 bg-black/40">
+                            <div class="space-y-0.5">
+                                <div class="serif text-[8px] tracking-widest uppercase" id="prev-label">Previous Log</div>
+                                <div id="prev-name" class="text-lg font-light tracking-tight text-white">---</div>
+                                <div id="prev-dept" class="text-slate-500 text-[10px] font-light">---</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-black/40 rounded-[2rem] p-6 border border-white/5">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="serif text-[9px] text-[#c5a059] tracking-[0.2em] uppercase opacity-70">Security Logs</span>
+                        <span id="cam-info" class="text-[8px] font-mono text-slate-600 uppercase tracking-tighter">No Camera Detected</span>
+                    </div>
+                    <div id="console" class="log-box h-48 overflow-y-auto text-[9px] font-mono text-slate-500 space-y-1.5">
+                        <div>> System Standby. Waiting for Auth...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const CLIENT_ID = '88725170403-lkp5homgvhjv50ffoadde8u43sfr8dba.apps.googleusercontent.com';
+        const SPREADSHEET_ID = '1X1O3wvZ2j_sUeJSifv0Uiex55kAzFEhtZ5vgTlgmIwY';
+        const SHEET_NAME = 'sheet1';
+
+        let accessToken = null;
+        let tokenClient;
+        let faceMatcher = null;
+        let videoDevices = [];
+        let currentDeviceIndex = 0;
+        let currentStream = null;
+
+        // 추가된 히스토리 상태 변수
+        let lastDetectedId = null;
+        let lastDetectedData = null;
+
+        const consoleEl = document.getElementById('console');
+        function printLog(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.textContent = `> ${msg.toUpperCase()}`;
+            if (type === 'error') div.className = 'text-red-500 font-bold';
+            if (type === 'success') div.className = 'text-[#c5a059] font-bold';
+            consoleEl.appendChild(div);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // 카메라 장치 목록을 갱신하는 함수
+        async function updateDeviceList() {
+            try {
+                // 권한을 먼저 요청하여 장치 레이블을 가져옵니다.
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                videoDevices = devices.filter(d => d.kind === 'videoinput');
                 
-                // 실제 대조 시뮬레이션 (구글 시트 확인 절차)
-                clearInterval(detectLoop);
-                setTimeout(() => {
-                    console.log("Sheet DB 대조 완료: ", GOOGLE_SHEET_DB);
-                    stream.getTracks().forEach(track => track.stop());
-                    loginSuccess();
-                }, 3000);
+                printLog(`${videoDevices.length}개의 카메라 감지됨`, "success");
+                videoDevices.forEach((d, i) => {
+                    printLog(`[CH ${i}] ${d.label || 'Unknown Camera'}`);
+                });
+            } catch (err) {
+                printLog("카메라 권한 거부됨: " + err.message, "error");
             }
-        }, 1000);
-    }
+        }
 
-    // 3. 음성 인식 (STT)
-    function startVoiceRecognition(targetId) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("음성인식을 지원하지 않는 브라우저입니다.");
-        
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'ko-KR';
-        recognition.start();
-        
-        recognition.onresult = (e) => {
-            document.getElementById(targetId).value = e.results[0][0].transcript;
+        window.onload = () => {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive.readonly',
+                callback: async (res) => {
+                    if (res.error) return printLog("Auth Error: " + res.error, "error");
+                    accessToken = res.access_token;
+                    document.getElementById('login-panel').style.display = 'none';
+                    document.getElementById('app-panel').classList.remove('hidden');
+                    document.getElementById('connection-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span> Online';
+                    printLog("Authentication Successful", "success");
+                    await initSecuritySystem();
+                }
+            });
         };
-    }
 
-    // 4. 공통 로그인 성공 처리
-    function loginSuccess() {
-        document.getElementById('auth-selection-screen').style.display = 'none';
-        document.getElementById('security-screen').style.display = 'none';
-        document.getElementById('code-auth-screen').style.display = 'none';
-        document.getElementById('main-app').style.display = 'flex';
-        document.getElementById('bottom-nav').style.display = 'flex';
-    }
+        document.getElementById('btn-login').onclick = () => tokenClient.requestAccessToken();
 
-    // 5. 화면 제어 및 기타 로직
-    function showSubScreen(type) {
-        document.getElementById('main-app').style.display = 'none';
-        document.getElementById(type + '-screen').style.display = 'flex';
-    }
-    function closeSubScreen() {
-        document.querySelectorAll('.sub-screen').forEach(s => s.style.display = 'none');
-        document.getElementById('main-app').style.display = 'flex';
-    }
-    function checkLocationForValet() {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const dist = Math.sqrt(Math.pow(pos.coords.latitude - 35.1618, 2) + Math.pow(pos.coords.longitude - 129.1709, 2));
-            if (dist < 0.009) alert("호텔 내 확인되었습니다. 발렛 출차 요청 페이지로 연결합니다.");
-            else alert("호텔 내에서만 사용 가능한 서비스입니다.");
-        });
-    }
+        async function initSecuritySystem() {
+            try {
+                const syncMsg = document.getElementById('sync-detail');
+                syncMsg.textContent = "Loading Face-AI Models...";
+                
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+                printLog("AI Models Ready");
 
-    function openSheet(mode) {
-        const overlay = document.getElementById('bottom-sheet-overlay');
-        const sheet = document.getElementById('bottom-sheet');
-        const content = document.getElementById('sheet-content');
-        const title = document.getElementById('sheet-title');
+                syncMsg.textContent = "Fetching Member Data...";
+                const range = encodeURIComponent(`${SHEET_NAME}!A1:E500`);
+                const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                const data = await res.json();
+                const users = (data.values || []).slice(1).map(row => ({
+                    id: row[0], name: row[1], dept: row[2], url: row[3]
+                })).filter(u => u.url && u.name);
+
+                printLog(`${users.length}명의 데이터 분석 중...`);
+
+                const descriptors = await Promise.all(users.map(async user => {
+                    try {
+                        let img;
+                        if (user.url.includes("drive.google.com")) {
+                            const fId = user.url.match(/[-\w]{25,}/)[0];
+                            const dRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fId}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } });
+                            img = await faceapi.bufferToImage(await dRes.blob());
+                        } else {
+                            img = await faceapi.fetchImage(`https://wsrv.nl/?url=${encodeURIComponent(user.url)}&output=jpg`);
+                        }
+                        const d = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                        return d ? new faceapi.LabeledFaceDescriptors(`${user.name}|${user.dept}|${user.url}`, [d.descriptor]) : null;
+                    } catch (e) { return null; }
+                }));
+
+                faceMatcher = new faceapi.FaceMatcher(descriptors.filter(d => d !== null), 0.55);
+                
+                await updateDeviceList();
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('btn-start').disabled = false;
+                printLog("Security System Armed", "success");
+            } catch (err) {
+                printLog("초기화 실패: " + err.message, "error");
+            }
+        }
+
+        async function startScanning(index) {
+            try {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(t => t.stop());
+                    printLog("이전 스트림 중지됨");
+                }
+                
+                const device = videoDevices[index];
+                document.getElementById('cam-info').textContent = device ? (device.label || `CH ${index}`) : 'Searching...';
+                
+                // 노트북 웹캠 및 모바일 외부 카메라 호환성을 위한 제약 조건 설정
+                const constraints = {
+                    video: device && device.deviceId ? { deviceId: { exact: device.deviceId } } : { facingMode: 'user' }
+                };
+
+                printLog(`${device ? device.label : '기본'} 카메라 연결 시도...`);
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                const video = document.getElementById('webcam');
+                video.srcObject = currentStream;
+                
+                // 모바일 크롬 브라우저 정책 대응
+                await video.play();
+                
+                video.onloadedmetadata = () => {
+                    const canvas = document.getElementById('overlay');
+                    const displaySize = { width: video.videoWidth, height: video.videoHeight };
+                    faceapi.matchDimensions(canvas, displaySize);
+                    
+                    printLog("비디오 스트림 활성화", "success");
+
+                    const detectionLoop = setInterval(async () => {
+                        if (video.paused || video.ended) return;
+                        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
+                        const resized = faceapi.resizeResults(detections, displaySize);
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        // 얼굴 크기(면적)를 기준으로 정렬하여 가장 큰 얼굴(가까운 사람)을 우선 처리
+                        resized.sort((a, b) => {
+                            const areaA = a.detection.box.width * a.detection.box.height;
+                            const areaB = b.detection.box.width * b.detection.box.height;
+                            return areaB - areaA;
+                        });
+
+                        resized.forEach((d, i) => {
+                            const match = faceMatcher.findBestMatch(d.descriptor);
+                            const confidence = Math.max(0, Math.round((1 - match.distance) * 100));
+                            
+                            // 매치 조건에 따른 텍스트 및 상태 분류
+                            let isUnknown = match.label.includes('unknown') || confidence < 62;
+                            let statusText = "";
+                            let color = "";
+                            
+                            if (isUnknown) {
+                                statusText = "확인 불가";
+                                color = "#ff4444"; // Red
+                            } else if (confidence >= 70) {
+                                statusText = "유력함";
+                                color = "#c5a059"; // Gold
+                            } else {
+                                // 62% 이상 ~ 70% 미만
+                                statusText = "추정됨";
+                                color = "#facc15"; // Yellow
+                            }
+
+                            // 가장 크게 인식된 첫 번째 사람(i === 0)만 UI 카드 업데이트
+                            if (i === 0) {
+                                let newId = isUnknown ? 'unknown' : match.label;
+                                
+                                // 새로운 인물이 나타났을 때 (또는 미확인 인물이 나타났을 때)
+                                if (newId !== lastDetectedId) {
+                                    // 이전 데이터가 있으면 아래(Previous) 카드로 내림
+                                    if (lastDetectedData) {
+                                        document.getElementById('prev-percent').textContent = lastDetectedData.confidence;
+                                        document.getElementById('prev-status').textContent = lastDetectedData.status;
+                                        document.getElementById('prev-name').textContent = lastDetectedData.name;
+                                        document.getElementById('prev-dept').textContent = lastDetectedData.dept;
+                                        document.getElementById('prev-img').src = lastDetectedData.imgUrl;
+                                        
+                                        const prevBadge = document.getElementById('prev-badge');
+                                        prevBadge.style.borderColor = lastDetectedData.color;
+                                        prevBadge.style.color = lastDetectedData.color;
+                                        document.getElementById('prev-label').style.color = lastDetectedData.color;
+                                        document.getElementById('prev-img').style.borderColor = lastDetectedData.color;
+                                        
+                                        document.getElementById('card-previous').classList.remove('hidden');
+                                    }
+                                    
+                                    // 현재(Top) 카드 데이터 생성
+                                    let name, dept, imgUrl;
+                                    if (isUnknown) {
+                                        name = "미확인 인원";
+                                        dept = "접근 제한 (확인 불가)";
+                                        imgUrl = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff4444'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1-8h-2V7h2v2z'/></svg>";
+                                    } else {
+                                        const parts = match.label.split('|');
+                                        name = parts[0];
+                                        dept = parts[1];
+                                        const fId = parts[2].match(/[-\w]{25,}/);
+                                        imgUrl = fId ? `https://lh3.googleusercontent.com/u/0/d/${fId[0]}` : parts[2];
+                                    }
+                                    
+                                    let currentData = { id: newId, name, dept, imgUrl, confidence, status: statusText, color };
+                                    
+                                    // 현재 카드 UI 업데이트
+                                    document.getElementById('current-percent').textContent = confidence;
+                                    document.getElementById('current-status').textContent = statusText;
+                                    document.getElementById('current-name').textContent = name;
+                                    document.getElementById('current-dept').textContent = dept;
+                                    document.getElementById('current-img').src = imgUrl;
+                                    
+                                    const currBadge = document.getElementById('current-badge');
+                                    currBadge.style.borderColor = color;
+                                    currBadge.style.color = color;
+                                    document.getElementById('current-dot').style.backgroundColor = color;
+                                    document.getElementById('current-label').style.color = color;
+                                    document.getElementById('current-label').textContent = isUnknown ? 'Unverified' : 'Verified Member';
+                                    document.getElementById('current-img').style.borderColor = color;
+                                    document.getElementById('current-img-ring').style.borderColor = color;
+                                    document.getElementById('card-current').style.borderColor = color;
+                                    
+                                    document.getElementById('card-current').classList.remove('hidden');
+                                    
+                                    lastDetectedId = newId;
+                                    lastDetectedData = currentData;
+                                } else if (lastDetectedData) {
+                                    // 동일한 인물이 계속 인식 중이면 퍼센테이지와 상태 텍스트만 실시간 갱신
+                                    lastDetectedData.confidence = confidence;
+                                    lastDetectedData.status = statusText;
+                                    lastDetectedData.color = color;
+                                    
+                                    document.getElementById('current-percent').textContent = confidence;
+                                    document.getElementById('current-status').textContent = statusText;
+                                    document.getElementById('current-badge').style.borderColor = color;
+                                    document.getElementById('current-badge').style.color = color;
+                                    document.getElementById('current-dot').style.backgroundColor = color;
+                                    document.getElementById('current-label').style.color = color;
+                                    document.getElementById('current-img').style.borderColor = color;
+                                    document.getElementById('card-current').style.borderColor = color;
+                                }
+                            }
+
+                            // 카메라 화면에 네모 박스와 퍼센트 그리기 (모든 얼굴)
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = 4;
+                            ctx.strokeRect(d.detection.box.x, d.detection.box.y, d.detection.box.width, d.detection.box.height);
+                            
+                            ctx.fillStyle = color;
+                            ctx.font = 'bold 16px "Noto Sans KR"';
+                            ctx.fillText(`${confidence}% ${statusText}`, d.detection.box.x, d.detection.box.y - 10);
+                        });
+                    }, 500);
+                };
+            } catch (e) {
+                printLog("연결 실패: " + e.message, "error");
+                // exact 조건 실패 시 fallback 시도
+                if (e.name === 'OverconstrainedError') {
+                    printLog("재시도: 일반 모드로 연결 중...");
+                    currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    document.getElementById('webcam').srcObject = currentStream;
+                }
+            }
+        }
+
+        document.getElementById('btn-start').onclick = () => startScanning(currentDeviceIndex);
         
-        title.innerText = "4 Season Tour (Google Drive)";
-        content.innerHTML = `
-            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1Ax4O2b49CM5I6-KnMebXjz9r8PHlgUmz/view')"><span>🌸 Spring Course</span><i class="material-icons">chevron_right</i></div>
-            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1m1nqU2eRtS4YHKAPKqYEekQn7KF0i_sp/view')"><span>🌊 Summer Course</span><i class="material-icons">chevron_right</i></div>
-            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1d84lGgWJuSJUh3F-AJThTIq-B-t9usRd/view')"><span>🍂 Autumn Course</span><i class="material-icons">chevron_right</i></div>
-            <div class="sub-list-item" onclick="window.open('https://drive.google.com/file/d/1YpcJG6XhzOfaR_e0iDOY0y2yXt5f0t8S/view')"><span>❄️ Winter Course</span><i class="material-icons">chevron_right</i></div>
-        `;
-        overlay.style.display = 'block';
-        setTimeout(() => sheet.style.bottom = '0', 50);
-    }
-    function closeSheet() {
-        document.getElementById('bottom-sheet').style.bottom = '-100%';
-        setTimeout(() => document.getElementById('bottom-sheet-overlay').style.display = 'none', 300);
-    }
-</script>
+        document.getElementById('btn-next-camera').onclick = async () => {
+            if (videoDevices.length === 0) await updateDeviceList();
+            if (videoDevices.length > 0) {
+                currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+                startScanning(currentDeviceIndex);
+            } else {
+                printLog("사용 가능한 카메라가 없습니다.", "error");
+            }
+        };
+
+        // 하드웨어 변경 감지
+        navigator.mediaDevices.ondevicechange = () => {
+            printLog("하드웨어 변경 감지됨 - 장치 목록 갱신");
+            updateDeviceList();
+        };
+    </script>
 </body>
 </html>
