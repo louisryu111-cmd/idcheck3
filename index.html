@@ -33,7 +33,7 @@
         </div>
     </header>
 
-    <main class="flex-1 px-6 max-w-5xl mx-auto w-full pb-10 space-y-6">
+    <main class="flex-1 px-6 max-w-6xl mx-auto w-full pb-10 space-y-6">
         
         <!-- Login Section -->
         <div id="login-panel" class="glass-panel max-w-lg mx-auto rounded-[3.5rem] p-12 text-center space-y-10 mt-6">
@@ -49,11 +49,11 @@
             </button>
         </div>
 
-        <!-- Main Workspace -->
-        <div id="app-panel" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-1000">
+        <!-- Main Workspace: 레이아웃 비율을 조정하여 카메라 영역 확장 -->
+        <div id="app-panel" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-1000">
             
-            <!-- Left Column: Camera -->
-            <div class="space-y-4">
+            <!-- Left Column: Camera (7/12 비중으로 확대) -->
+            <div class="lg:col-span-7 space-y-4">
                 <div class="video-container aspect-video lg:aspect-[4/3]">
                     <video id="webcam" autoplay playsinline muted></video>
                     <canvas id="overlay"></canvas>
@@ -75,8 +75,8 @@
                 </div>
             </div>
 
-            <!-- Right Column: Results & Logs -->
-            <div class="space-y-6">
+            <!-- Right Column: Results & Logs (5/12 비중) -->
+            <div class="lg:col-span-5 space-y-6">
                 <!-- History Container -->
                 <div id="history-container" class="space-y-4 min-h-[16rem]">
                     <!-- Current (Top) -->
@@ -140,7 +140,6 @@
         let currentDeviceIndex = 0;
         let currentStream = null;
 
-        // 추가된 히스토리 상태 변수
         let lastDetectedId = null;
         let lastDetectedData = null;
 
@@ -154,10 +153,8 @@
             consoleEl.scrollTop = consoleEl.scrollHeight;
         }
 
-        // 카메라 장치 목록을 갱신하는 함수
         async function updateDeviceList() {
             try {
-                // 권한을 먼저 요청하여 장치 레이블을 가져옵니다.
                 await navigator.mediaDevices.getUserMedia({ video: true });
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 videoDevices = devices.filter(d => d.kind === 'videoinput');
@@ -244,13 +241,11 @@
             try {
                 if (currentStream) {
                     currentStream.getTracks().forEach(t => t.stop());
-                    printLog("이전 스트림 중지됨");
                 }
                 
                 const device = videoDevices[index];
                 document.getElementById('cam-info').textContent = device ? (device.label || `CH ${index}`) : 'Searching...';
                 
-                // 노트북 웹캠 및 모바일 외부 카메라 호환성을 위한 제약 조건 설정
                 const constraints = {
                     video: device && device.deviceId ? { deviceId: { exact: device.deviceId } } : { facingMode: 'user' }
                 };
@@ -260,8 +255,6 @@
                 
                 const video = document.getElementById('webcam');
                 video.srcObject = currentStream;
-                
-                // 모바일 크롬 브라우저 정책 대응
                 await video.play();
                 
                 video.onloadedmetadata = () => {
@@ -278,7 +271,6 @@
                         const ctx = canvas.getContext('2d');
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                        // 얼굴 크기(면적)를 기준으로 정렬하여 가장 큰 얼굴(가까운 사람)을 우선 처리
                         resized.sort((a, b) => {
                             const areaA = a.detection.box.width * a.detection.box.height;
                             const areaB = b.detection.box.width * b.detection.box.height;
@@ -289,30 +281,25 @@
                             const match = faceMatcher.findBestMatch(d.descriptor);
                             const confidence = Math.max(0, Math.round((1 - match.distance) * 100));
                             
-                            // 매치 조건에 따른 텍스트 및 상태 분류
                             let isUnknown = match.label.includes('unknown') || confidence < 62;
                             let statusText = "";
                             let color = "";
                             
                             if (isUnknown) {
                                 statusText = "확인 불가";
-                                color = "#ff4444"; // Red
+                                color = "#ff4444";
                             } else if (confidence >= 70) {
                                 statusText = "유력함";
-                                color = "#c5a059"; // Gold
+                                color = "#c5a059";
                             } else {
-                                // 62% 이상 ~ 70% 미만
                                 statusText = "추정됨";
-                                color = "#facc15"; // Yellow
+                                color = "#facc15";
                             }
 
-                            // 가장 크게 인식된 첫 번째 사람(i === 0)만 UI 카드 업데이트
                             if (i === 0) {
                                 let newId = isUnknown ? 'unknown' : match.label;
                                 
-                                // 새로운 인물이 나타났을 때 (또는 미확인 인물이 나타났을 때)
                                 if (newId !== lastDetectedId) {
-                                    // 이전 데이터가 있으면 아래(Previous) 카드로 내림
                                     if (lastDetectedData) {
                                         document.getElementById('prev-percent').textContent = lastDetectedData.confidence;
                                         document.getElementById('prev-status').textContent = lastDetectedData.status;
@@ -329,7 +316,6 @@
                                         document.getElementById('card-previous').classList.remove('hidden');
                                     }
                                     
-                                    // 현재(Top) 카드 데이터 생성
                                     let name, dept, imgUrl;
                                     if (isUnknown) {
                                         name = "미확인 인원";
@@ -345,7 +331,6 @@
                                     
                                     let currentData = { id: newId, name, dept, imgUrl, confidence, status: statusText, color };
                                     
-                                    // 현재 카드 UI 업데이트
                                     document.getElementById('current-percent').textContent = confidence;
                                     document.getElementById('current-status').textContent = statusText;
                                     document.getElementById('current-name').textContent = name;
@@ -367,7 +352,6 @@
                                     lastDetectedId = newId;
                                     lastDetectedData = currentData;
                                 } else if (lastDetectedData) {
-                                    // 동일한 인물이 계속 인식 중이면 퍼센테이지와 상태 텍스트만 실시간 갱신
                                     lastDetectedData.confidence = confidence;
                                     lastDetectedData.status = statusText;
                                     lastDetectedData.color = color;
@@ -383,7 +367,6 @@
                                 }
                             }
 
-                            // 카메라 화면에 네모 박스와 퍼센트 그리기 (모든 얼굴)
                             ctx.strokeStyle = color;
                             ctx.lineWidth = 4;
                             ctx.strokeRect(d.detection.box.x, d.detection.box.y, d.detection.box.width, d.detection.box.height);
@@ -396,7 +379,6 @@
                 };
             } catch (e) {
                 printLog("연결 실패: " + e.message, "error");
-                // exact 조건 실패 시 fallback 시도
                 if (e.name === 'OverconstrainedError') {
                     printLog("재시도: 일반 모드로 연결 중...");
                     currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -417,7 +399,6 @@
             }
         };
 
-        // 하드웨어 변경 감지
         navigator.mediaDevices.ondevicechange = () => {
             printLog("하드웨어 변경 감지됨 - 장치 목록 갱신");
             updateDeviceList();
